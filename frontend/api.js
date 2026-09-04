@@ -431,4 +431,83 @@ export const setSkillsCovered = (id, skillsCovered) =>
 export const removeSkillCovered = (id, skillRef) =>
   api.delete(`/training/curriculums/${id}/skills/${encodeURIComponent(skillRef)}`).then(({ data }) => data)
 
+// ---------------------------------------------------------------------------
+// Document Processing  (/api/process)
+//
+// All endpoints require authentication.
+//
+// Submit:
+//   processResume(payload)         — extract skills from resume text
+//   processJobDescription(payload) — extract skills from JD text
+//   processCurriculum(payload)     — extract skills from curriculum text
+//
+// Poll & manage:
+//   getProcessingJob(jobId)        — poll a specific extraction job
+//   retryProcessingJob(jobId)      — retry a pending/failed job
+//   getProcessingJobs(params)      — list own jobs (sourceType, status, page, limit)
+//
+// AI service status:
+//   getAiServiceHealth()           — check if Python AI service is alive
+// ---------------------------------------------------------------------------
+
+/**
+ * Submit a resume for skill extraction.
+ * @param {object} payload
+ * @param {string} payload.content        — plain text of the resume (≥ 50 chars)
+ * @param {string} [payload.sourceId]     — student/user profile UUID
+ * @param {string} [payload.candidateName]
+ * @param {string} [payload.targetRole]
+ *
+ * Returns 200 (completed), 202 (pending — AI unavailable), or 422 (AI hard error).
+ */
+export const processResume = (payload) =>
+  api.post('/process/resume', payload).then(({ data }) => data)
+
+/**
+ * Submit a job description for skill extraction.
+ * @param {object} payload
+ * @param {string} payload.content      — plain text of the JD (≥ 50 chars)
+ * @param {string} [payload.sourceId]   — job_roles document UUID
+ * @param {string} [payload.jobTitle]
+ * @param {string} [payload.industryId]
+ */
+export const processJobDescription = (payload) =>
+  api.post('/process/jd', payload).then(({ data }) => data)
+
+/**
+ * Submit a curriculum for skill extraction.
+ * @param {object} payload
+ * @param {string} payload.content               — plain text (≥ 50 chars)
+ * @param {string} [payload.sourceId]            — curriculums document UUID
+ * @param {string} [payload.programName]
+ * @param {string} [payload.trainingProgramId]
+ */
+export const processCurriculum = (payload) =>
+  api.post('/process/curriculum', payload).then(({ data }) => data)
+
+/**
+ * Poll a single extraction job by its ID.
+ * @param {string} jobId
+ */
+export const getProcessingJob = (jobId) =>
+  api.get(`/process/${jobId}`).then(({ data }) => data)
+
+/**
+ * Retry a pending or failed extraction job.
+ * @param {string} jobId
+ */
+export const retryProcessingJob = (jobId) =>
+  api.post(`/process/${jobId}/retry`).then(({ data }) => data)
+
+/**
+ * List extraction jobs submitted by the current user.
+ * @param {object} params - sourceType, status, page, limit
+ */
+export const getProcessingJobs = (params = {}) =>
+  api.get('/process', { params }).then(({ data }) => data)
+
+/** Check whether the Python AI microservice is available. */
+export const getAiServiceHealth = () =>
+  api.get('/process/ai/health').then(({ data }) => data)
+
 export default api
