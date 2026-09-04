@@ -115,7 +115,23 @@ const indexes = {
     [{ 'modules.moduleId': 1 }],
     [{ title: 'text', description: 'text', content: 'text' }, { name: 'curriculums_text_idx' }],
   ],
-  extraction_results: [[{ sourceType: 1, sourceId: 1 }], [{ createdAt: -1 }]],
+  extraction_results: [
+    // Core lookups
+    [{ sourceType: 1, sourceId: 1 }],
+    [{ sourceType: 1 }],
+    [{ sourceId: 1 }],
+    // Status-based querying (pending retries, completed results)
+    [{ status: 1 }],
+    [{ status: 1, createdAt: -1 }],
+    // Owner-based lookups
+    [{ submittedBy: 1, createdAt: -1 }],
+    // Time-based sorting / TTL candidates
+    [{ createdAt: -1 }],
+    [{ completedAt: -1 }],
+    // Extracted skill lookups (for gap analysis queries)
+    [{ 'extractedSkills.normalizedName': 1 }],
+    [{ 'extractedSkills.category': 1 }],
+  ],
   program_alignments: [[{ trainingProgramId: 1, jobRoleId: 1 }], [{ score: -1 }]],
   skill_gaps: [[{ subjectType: 1, subjectId: 1 }], [{ priority: 1 }]],
   readiness_scores: [[{ studentId: 1, targetRole: 1 }], [{ calculatedAt: -1 }]],

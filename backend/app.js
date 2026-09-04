@@ -6,6 +6,7 @@ import skillsRouter from './routes/skills.js'
 import industryRouter from './routes/industry.js'
 import jobsRouter from './routes/jobs.js'
 import trainingRouter from './routes/training.js'
+import processRouter from './routes/process.js'
 import apiRouter from './routes/api.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 
@@ -21,6 +22,7 @@ export function createApp() {
   app.use('/api/industries', industryRouter)
   app.use('/api/jobs', jobsRouter)
   app.use('/api/training', trainingRouter)
+  app.use('/api/process', processRouter)
   app.use('/api', apiRouter)
   app.use(notFoundHandler)
   app.use(errorHandler)

@@ -7,4 +7,8 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   jwtSecret: process.env.JWT_SECRET || 'skillsync-development-secret-change-me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '2h',
+  // Python AI microservice
+  aiServiceUrl: process.env.AI_SERVICE_URL || 'http://localhost:8000',
+  aiServiceTimeout: Number(process.env.AI_SERVICE_TIMEOUT_MS || 30000),
+  aiServiceApiKey: process.env.AI_SERVICE_API_KEY || '',
 }
