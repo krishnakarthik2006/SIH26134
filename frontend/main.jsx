@@ -13,6 +13,7 @@ const GovernmentDashboard = lazy(() => import('./components/GovernmentDashboard.
 const AIIntelligence = lazy(() => import('./components/AIIntelligence.jsx'))
 const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard.jsx'))
 const ReportsCenter = lazy(() => import('./components/ReportsCenter.jsx'))
+const SkillMatchingDashboard = lazy(() => import('./components/SkillMatchingDashboard.jsx'))
 
 function RouteFallback() {
   return <div className="route-fallback"><div className="route-spinner" /><strong>Loading workspace</strong><span>Preparing your intelligence view...</span></div>
@@ -32,6 +33,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/intelligence" element={<AuthGate><AIIntelligence /></AuthGate>} />
         <Route path="/analytics" element={<AuthGate><AnalyticsDashboard /></AuthGate>} />
         <Route path="/reports" element={<AuthGate><ReportsCenter /></AuthGate>} />
+        <Route path="/skill-matching" element={<AuthGate><SkillMatchingDashboard /></AuthGate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

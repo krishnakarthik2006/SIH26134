@@ -510,4 +510,166 @@ export const getProcessingJobs = (params = {}) =>
 export const getAiServiceHealth = () =>
   api.get('/process/ai/health').then(({ data }) => data)
 
+// ---------------------------------------------------------------------------
+// Skill Normalization  (/api/normalize)
+//
+// Public:
+//   normalizeSkills(terms[], opts?)       — batch-resolve raw strings to canonical skills
+//
+// Protected reads (any auth):
+//   getNormalizationMappings(params)      — list admin-curated skill_mappings
+//   getNormalizationMapping(id)           — get one mapping by id
+//
+// Protected writes (industry | government):
+//   createMapping(payload)               — add one sourceTerm → skillId mapping
+//   bulkUpsertMappings(mappings[], mode) — upsert up to 500 mappings (skip|replace)
+//   updateMapping(id, payload)           — change a mapping's target skillId or notes
+//   deleteMapping(id)                    — remove a mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Batch-normalize raw skill strings to canonical skills.
+ * Public — no token required.
+ *
+ * @param {string[]} terms             — raw skill strings (1-100)
+ * @param {object}   [opts]
+ * @param {boolean}  [opts.deduplicate=true]
+ * @param {number}   [opts.maxEditDistance]    — 0-3
+ * @param {number}   [opts.tokenOverlapThresh] — 0-1
+ *
+ * Response: { results: MatchResult[], summary: { total, matched, unmatched, byMatchType } }
+ */
+export const normalizeSkills = (terms, opts = {}) =>
+  api.post('/normalize', { terms, ...opts }).then(({ data }) => data)
+
+/** List all admin-curated skill_mappings (paginated). */
+export const getNormalizationMappings = (params = {}) =>
+  api.get('/normalize/mappings', { params }).then(({ data }) => data)
+
+/** Fetch one mapping by id. */
+export const getNormalizationMapping = (id) =>
+  api.get(`/normalize/mappings/${id}`).then(({ data }) => data)
+
+/**
+ * Create a single sourceTerm → skillId mapping.
+ * @param {{ sourceTerm: string, skillId: string, notes?: string }} payload
+ */
+export const createMapping = (payload) =>
+  api.post('/normalize/mappings', payload).then(({ data }) => data)
+
+/**
+ * Bulk-upsert up to 500 mappings.
+ * @param {Array<{ sourceTerm, skillId, notes? }>} mappings
+ * @param {'skip'|'replace'} mode — behaviour on duplicate sourceTerm (default 'skip')
+ * Returns 207 Multi-Status: { created, skipped, replaced, errors[] }
+ */
+export const bulkUpsertMappings = (mappings, mode = 'skip') =>
+  api.post('/normalize/mappings/bulk', { mappings, mode }).then(({ data }) => data)
+
+/**
+ * Update a mapping's target skill or notes.
+ * @param {string} id
+ * @param {{ skillId?: string, notes?: string }} payload
+ */
+export const updateMapping = (id, payload) =>
+  api.patch(`/normalize/mappings/${id}`, payload).then(({ data }) => data)
+
+/** Delete a mapping by id. */
+export const deleteMapping = (id) =>
+  api.delete(`/normalize/mappings/${id}`).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// Skill Matching & Gap Analysis  (/api/match)
+//
+// All endpoints require authentication.
+//
+// Ad-hoc (not persisted):
+//   matchSkillsAdHoc(requiredSkills, currentSkills)
+//                  — instant match, result returned but not saved
+//
+// Persisted gap analysis:
+//   analyzeGap(payload)
+//                  — full gap analysis, saved to skill_gaps + readiness_scores
+//   getGapResults(subjectType, subjectId, params?)
+//                  — latest persisted readiness score + open gaps
+//   getGapHistory(subjectType, subjectId, params?)
+//                  — all historical readiness score records (paginated)
+//
+// Job-role shortcut:
+//   matchAgainstJob(jobRoleId, currentSkills, opts?)
+//                  — fetch job's requiredSkills from DB, then match
+// ---------------------------------------------------------------------------
+
+/**
+ * Ad-hoc skill match — result returned, nothing saved to DB.
+ *
+ * @param {object[]} requiredSkills  [{ skillId?, skillName?, level?, requirement? }]
+ * @param {object[]} currentSkills   [{ skillId?, skillName?, level?, selfRating? }]
+ *
+ * Response: { result: { readinessScore, gapSeverity, matched[], gaps[], surplus[], … } }
+ */
+export const matchSkillsAdHoc = (requiredSkills, currentSkills) =>
+  api.post('/match', { requiredSkills, currentSkills }).then(({ data }) => data)
+
+/**
+ * Full gap analysis — result persisted to skill_gaps + readiness_scores.
+ *
+ * @param {object} payload
+ * @param {string}   payload.subjectType    learner | training_program | team
+ * @param {string}   payload.subjectId      UUID of the subject
+ * @param {string}   payload.targetRole     target role label
+ * @param {string}   [payload.jobRoleId]    optional job_roles UUID for enrichment
+ * @param {object[]} payload.requiredSkills
+ * @param {object[]} payload.currentSkills
+ *
+ * Response: { message, result, readinessScore, gapCount }
+ */
+export const analyzeGap = (payload) =>
+  api.post('/match/gap', payload).then(({ data }) => data)
+
+/**
+ * Fetch the latest persisted gap results for a subject.
+ *
+ * @param {string} subjectType  learner | training_program | team
+ * @param {string} subjectId    UUID of the subject
+ * @param {object} [params]     { targetRole? }
+ *
+ * Response: { latest, readinessScores[], openGaps[] }
+ */
+export const getGapResults = (subjectType, subjectId, params = {}) =>
+  api.get(`/match/gap/${subjectType}/${subjectId}`, { params }).then(({ data }) => data)
+
+/**
+ * Paginated history of all readiness score records for a subject.
+ *
+ * @param {string} subjectType
+ * @param {string} subjectId
+ * @param {object} [params]  { targetRole?, page?, limit? }
+ */
+export const getGapHistory = (subjectType, subjectId, params = {}) =>
+  api.get(`/match/gap/${subjectType}/${subjectId}/history`, { params }).then(({ data }) => data)
+
+/**
+ * Match a learner's current skills against a specific job role.
+ * Fetches the job role's requiredSkills from the DB automatically.
+ *
+ * @param {string}   jobRoleId
+ * @param {object[]} currentSkills   [{ skillId?, skillName?, level?, selfRating? }]
+ * @param {object}   [opts]
+ * @param {boolean}  [opts.persist=false]   save results to DB
+ * @param {string}   [opts.subjectType]     required if persist=true
+ * @param {string}   [opts.subjectId]       required if persist=true
+ */
+export const matchAgainstJob = (jobRoleId, currentSkills, opts = {}) =>
+  api.post(`/match/job/${jobRoleId}`, { currentSkills, ...opts }).then(({ data }) => data)
+
+// ─── Phase B9 component aliases ───────────────────────────────────────────────
+// Convenience re-exports used by SkillMatchingDashboard.jsx
+
+/** Alias for normalizeSkills — batch-normalize raw terms */
+export const normalizeTermsBatch = normalizeSkills
+
+/** Alias for matchSkillsAdHoc — ad-hoc skill match (not persisted) */
+export const adHocMatch = matchSkillsAdHoc
+
 export default api

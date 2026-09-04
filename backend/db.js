@@ -49,7 +49,16 @@ const indexes = {
     // Full-text search across name, aliases, description, tags
     [{ name: 'text', aliases: 'text', description: 'text', tags: 'text' }, { name: 'skills_text_idx' }],
   ],
-  skill_mappings: [[{ sourceTerm: 1 }], [{ skillId: 1 }]],
+  skill_mappings: [
+    // Primary lookup — unique per source term (named to avoid collision with old non-unique index)
+    [{ sourceTerm: 1 }, { unique: true, sparse: true, name: 'skill_mappings_sourceTerm_unique' }],
+    // Reverse lookup — all aliases that map to a skill
+    [{ skillId: 1 }],
+    // Admin browsing
+    [{ createdBy: 1 }],
+    [{ createdAt: -1 }],
+    [{ skillName: 1 }],
+  ],
   industries: [
     [{ name: 1 }, { unique: true, sparse: true }],
     [{ userId: 1 }, { unique: true, sparse: true }],
@@ -133,8 +142,37 @@ const indexes = {
     [{ 'extractedSkills.category': 1 }],
   ],
   program_alignments: [[{ trainingProgramId: 1, jobRoleId: 1 }], [{ score: -1 }]],
-  skill_gaps: [[{ subjectType: 1, subjectId: 1 }], [{ priority: 1 }]],
-  readiness_scores: [[{ studentId: 1, targetRole: 1 }], [{ calculatedAt: -1 }]],
+  skill_gaps: [
+    // Primary query pattern: all gaps for a given subject + role
+    [{ subjectType: 1, subjectId: 1, targetRole: 1 }],
+    [{ subjectType: 1, subjectId: 1 }],
+    // Filter by priority for surfacing critical gaps
+    [{ priority: -1 }],
+    [{ priority: 1 }],
+    // Status filtering (open vs resolved)
+    [{ status: 1 }],
+    [{ status: 1, subjectId: 1 }],
+    // Canonical skill lookups — "which subjects have a gap for skill X?"
+    [{ canonicalId: 1 }],
+    // Job role analysis
+    [{ jobRoleId: 1 }],
+    // Time-based
+    [{ identifiedAt: -1 }],
+  ],
+  readiness_scores: [
+    // Unique per subject+role (upserted on each analysis run)
+    [{ subjectType: 1, subjectId: 1, targetRole: 1 }, { unique: true, sparse: true }],
+    [{ subjectType: 1, subjectId: 1 }],
+    // Leaderboard / ranking queries
+    [{ readinessScore: -1 }],
+    [{ gapSeverity: 1 }],
+    // Job role drill-down
+    [{ jobRoleId: 1 }],
+    // Who computed it
+    [{ computedBy: 1 }],
+    // Time-based
+    [{ calculatedAt: -1 }],
+  ],
   courses: [[{ skillIds: 1 }], [{ providerId: 1 }]],
   recommendations: [[{ recipientType: 1, recipientId: 1 }], [{ status: 1 }]],
   learning_roadmaps: [[{ studentId: 1, status: 1 }]],
@@ -172,11 +210,32 @@ export async function connectToDatabase() {
 async function initializeDatabase() {
   const existing = new Set((await database.listCollections({}, { nameOnly: true }).toArray()).map(({ name }) => name))
 
+  // Drop indexes that conflict with new definitions before creating
+  await dropObsoleteIndexes()
+
   for (const collectionName of domainCollections) {
     if (!existing.has(collectionName)) await database.createCollection(collectionName)
     for (const [keys, options] of indexes[collectionName] || []) {
       await database.collection(collectionName).createIndex(keys, options)
     }
+  }
+}
+
+/**
+ * Drop old index definitions that conflict with updated ones.
+ * Safe to call repeatedly — ignores errors for non-existent indexes.
+ */
+async function dropObsoleteIndexes() {
+  const drops = [
+    // skill_mappings: old non-unique sourceTerm_1 replaced by unique named index
+    { collection: 'skill_mappings', indexName: 'sourceTerm_1' },
+    // readiness_scores: old compound index replaced by new named unique one
+    { collection: 'readiness_scores', indexName: 'studentId_1_targetRole_1' },
+  ]
+  for (const { collection, indexName } of drops) {
+    try {
+      await database.collection(collection).dropIndex(indexName)
+    } catch { /* index may not exist — safe to ignore */ }
   }
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getOverview } from './api.js'
 import DemandChart from './components/DemandChart.jsx'
 import SignalForm from './components/SignalForm.jsx'
+import SkillMatchingDashboard from './components/SkillMatchingDashboard.jsx'
 import {
   Activity,
   ArrowUpRight,
@@ -70,6 +71,9 @@ function App() {
 
       <main className="main-content">
         <header className="topbar"><div className="crumb"><span>Workspace</span><span>/</span><strong>{active}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search"><Search size={18} /></button><button className="icon-button has-dot" aria-label="Notifications"><Bell size={18} /></button><button className="avatar-button">AK</button></div></header>
+        {active === 'Skill intelligence' ? (
+          <SkillMatchingDashboard />
+        ) : (
         <div className="content-wrap">
           <section className="welcome-row"><div><p className="eyebrow">THURSDAY, 04 SEPTEMBER 2026</p><h1>Good morning, Arjun <span className="wave">✦</span></h1><p className="intro">Here is how the skill ecosystem is moving today.</p></div><div className="header-actions"><button className="secondary-button"><FileUp size={16} /> Import job descriptions</button><button className="primary-button" onClick={() => setShowUpload(true)}><Plus size={17} /> Add signal</button></div></section>
           <section className="signal-banner"><div className="banner-icon"><Activity size={21} /></div><div><strong>The loop is getting smarter.</strong><span>1,248 new demand signals have been normalized this month, improving recommendations across the ecosystem.</span></div><button className="banner-link" onClick={() => setActive('Skill intelligence')}>View intelligence <ArrowUpRight size={15} /></button></section>
@@ -80,6 +84,7 @@ function App() {
           <section className="regional-strip"><div className="regional-copy"><div className="regional-icon"><MapPinned size={19} /></div><div><p className="eyebrow">REGIONAL SIGNAL</p><h3>Vidarbha needs a stronger cloud talent pipeline</h3><p>Demand is up 24% while local course coverage sits at 51%. A targeted intervention could unlock 3,200 roles.</p></div></div><button className="secondary-button">Open regional view <ArrowUpRight size={16} /></button></section>
           <footer className="footer"><span>SkillSync intelligence workspace</span><span>Data refreshed 6 minutes ago <i className="pulse" /></span></footer>
         </div>
+        )}
       </main>
       {showUpload && <div className="modal-backdrop" onClick={() => setShowUpload(false)}><div className="modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setShowUpload(false)}><X size={17} /></button><div className="modal-symbol"><FileUp size={21} /></div><p className="eyebrow">NEW DEMAND SIGNAL</p><h2>Bring a role profile into the loop</h2><p>Upload a job description and SkillSync will extract, normalize, and map the skills it contains.</p><SignalForm onComplete={() => setShowUpload(false)} /></div></div>}
     </div>

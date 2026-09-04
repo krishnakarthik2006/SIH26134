@@ -25,6 +25,7 @@ import { Router } from 'express'
 import { getDatabase } from '../db.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
+import { buildNormalizedTerm } from '../services/normalization.js'
 
 const router = Router()
 
@@ -47,9 +48,14 @@ function conflict(msg) {
   const e = new Error(msg); e.statusCode = 409; return e
 }
 
-/** Lowercase, trim, collapse internal whitespace */
+/**
+ * Use the same canonical form as the B9 matching engine.
+ *
+ * A skill written as "Power-BI", "Power_BI", or "Power BI" must be stored
+ * in the same form that the normalizer will later use for its lookup.
+ */
 function normalize(name) {
-  return name.trim().toLowerCase().replace(/\s+/g, ' ')
+  return buildNormalizedTerm(name)
 }
 
 /** Strip _id, return id instead */
