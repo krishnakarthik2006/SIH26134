@@ -24,6 +24,18 @@ const overview = {
   ],
 }
 
+const reports = [
+  { id: 'report-q3-demand', title: 'Q3 talent demand report', type: 'Industry demand', updated: 'Today', rows: 184, status: 'Ready' },
+  { id: 'report-regional-gaps', title: 'Regional skill gap brief', type: 'Regional analytics', updated: 'Yesterday', rows: 32, status: 'Ready' },
+  { id: 'report-training-alignment', title: 'Training alignment summary', type: 'Supply vs demand', updated: '28 Aug 2026', rows: 84, status: 'Ready' },
+]
+
+const notifications = [
+  { id: 'notification-1', title: 'New skill gap detected', text: 'Cloud security demand rose 18% in Vidarbha.', severity: 'high', read: false, time: '12 min ago' },
+  { id: 'notification-2', title: 'Report is ready', text: 'Your Q3 talent demand report finished generating.', severity: 'info', read: false, time: '1 hr ago' },
+  { id: 'notification-3', title: 'Alignment improved', text: 'Training coverage increased by 6 points this month.', severity: 'success', read: true, time: 'Yesterday' },
+]
+
 app.get('/api/health', (_request, response) => {
   response.json({ status: 'ok', service: 'skillsync-api' })
 })
@@ -45,6 +57,26 @@ app.post('/api/signals', (request, response) => {
     source,
     status: 'queued-for-normalization',
   })
+})
+
+app.get('/api/reports', (_request, response) => {
+  response.json(reports)
+})
+
+app.post('/api/reports/generate', (request, response) => {
+  const { type = 'Ecosystem overview', format = 'PDF' } = request.body
+  response.status(201).json({ id: `report-${Date.now()}`, title: `${type} report`, format, status: 'ready', generatedAt: new Date().toISOString() })
+})
+
+app.get('/api/notifications', (_request, response) => {
+  response.json(notifications)
+})
+
+app.patch('/api/notifications/:id/read', (request, response) => {
+  const notification = notifications.find((item) => item.id === request.params.id)
+  if (!notification) return response.status(404).json({ error: 'notification not found' })
+  notification.read = true
+  response.json(notification)
 })
 
 app.listen(port, () => {

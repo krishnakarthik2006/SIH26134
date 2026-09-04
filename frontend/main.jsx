@@ -9,6 +9,7 @@ import IndustryDashboard from './components/IndustryDashboard.jsx'
 import GovernmentDashboard from './components/GovernmentDashboard.jsx'
 import AIIntelligence from './components/AIIntelligence.jsx'
 import AnalyticsDashboard from './components/AnalyticsDashboard.jsx'
+import ReportsCenter from './components/ReportsCenter.jsx'
 import './styles.css'
 
 createRoot(document.getElementById('root')).render(
@@ -23,6 +24,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/government" element={<AuthGate><GovernmentDashboard /></AuthGate>} />
         <Route path="/intelligence" element={<AuthGate><AIIntelligence /></AuthGate>} />
         <Route path="/analytics" element={<AuthGate><AnalyticsDashboard /></AuthGate>} />
+        <Route path="/reports" element={<AuthGate><ReportsCenter /></AuthGate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
