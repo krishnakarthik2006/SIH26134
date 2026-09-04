@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
+import { closeDatabase, connectToDatabase, domainCollections, getDatabase, getDatabaseName, isDatabaseConnected } from './db.js'
 
 const app = express()
 const port = process.env.PORT || 4000
@@ -37,7 +38,7 @@ const notifications = [
 ]
 
 app.get('/api/health', (_request, response) => {
-  response.json({ status: 'ok', service: 'skillsync-api' })
+  response.json({ status: 'ok', service: 'skillsync-api', mongodb: isDatabaseConnected() ? 'connected' : 'disconnected', database: getDatabaseName(), collections: domainCollections })
 })
 
 app.get('/api/overview', (_request, response) => {
@@ -51,12 +52,19 @@ app.post('/api/signals', (request, response) => {
     return response.status(400).json({ error: 'title and source are required' })
   }
 
-  response.status(201).json({
+  const signal = {
     id: `signal-${Date.now()}`,
     title,
     source,
     status: 'queued-for-normalization',
+    createdAt: new Date(),
+  }
+
+  getDatabase().collection('job_descriptions').insertOne({ ...signal, sourceType: 'manual-signal' }).catch((error) => {
+    console.error('Failed to persist signal:', error.message)
   })
+
+  response.status(201).json(signal)
 })
 
 app.get('/api/reports', (_request, response) => {
@@ -79,6 +87,27 @@ app.patch('/api/notifications/:id/read', (request, response) => {
   response.json(notification)
 })
 
-app.listen(port, () => {
-  console.log(`SkillSync API listening on http://localhost:${port}`)
+async function startServer() {
+  try {
+    await connectToDatabase()
+    console.log('MongoDB connected')
+    app.listen(port, () => {
+      console.log(`SkillSync API listening on http://localhost:${port}`)
+    })
+  } catch (error) {
+    console.error('MongoDB connection failed:', error.message)
+    process.exitCode = 1
+  }
+}
+
+process.on('SIGINT', async () => {
+  await closeDatabase()
+  process.exit(0)
 })
+
+process.on('SIGTERM', async () => {
+  await closeDatabase()
+  process.exit(0)
+})
+
+startServer()
