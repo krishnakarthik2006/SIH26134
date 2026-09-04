@@ -27,6 +27,7 @@ export const domainCollections = [
   'skill_trends',
   'regional_skill_gaps',
   'reports',
+  'government_profiles',
 ]
 
 const indexes = {
@@ -34,10 +35,10 @@ const indexes = {
   students: [[{ userId: 1 }, { unique: true, sparse: true }], [{ targetRole: 1 }]],
   skills: [[{ normalizedName: 1 }, { unique: true, sparse: true }], [{ category: 1 }]],
   skill_mappings: [[{ sourceTerm: 1 }], [{ skillId: 1 }]],
-  industries: [[{ name: 1 }, { unique: true, sparse: true }]],
+  industries: [[{ name: 1 }, { unique: true, sparse: true }], [{ userId: 1 }, { unique: true, sparse: true }]],
   job_roles: [[{ industryId: 1, status: 1 }], [{ title: 1 }]],
   job_descriptions: [[{ jobRoleId: 1, createdAt: -1 }]],
-  training_providers: [[{ name: 1 }, { unique: true, sparse: true }]],
+  training_providers: [[{ name: 1 }, { unique: true, sparse: true }], [{ userId: 1 }, { unique: true, sparse: true }]],
   training_programs: [[{ providerId: 1, status: 1 }]],
   curriculums: [[{ trainingProgramId: 1, version: -1 }]],
   extraction_results: [[{ sourceType: 1, sourceId: 1 }], [{ createdAt: -1 }]],
@@ -53,6 +54,7 @@ const indexes = {
   skill_trends: [[{ skillId: 1, recordedAt: -1 }]],
   regional_skill_gaps: [[{ region: 1, skillId: 1 }], [{ priority: 1 }]],
   reports: [[{ ownerId: 1, createdAt: -1 }], [{ type: 1 }]],
+  government_profiles: [[{ userId: 1 }, { unique: true, sparse: true }], [{ region: 1 }]],
 }
 
 let client
