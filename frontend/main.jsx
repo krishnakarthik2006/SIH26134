@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthGate } from './components/AuthGate.jsx'
 import StudentDashboard from './components/StudentDashboard.jsx'
+import TrainingDashboard from './components/TrainingDashboard.jsx'
 import './styles.css'
 
 createRoot(document.getElementById('root')).render(
@@ -13,6 +14,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/login" element={<AuthGate><App /></AuthGate>} />
         <Route path="/" element={<AuthGate><App /></AuthGate>} />
         <Route path="/student" element={<AuthGate><StudentDashboard /></AuthGate>} />
+        <Route path="/training" element={<AuthGate><TrainingDashboard /></AuthGate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

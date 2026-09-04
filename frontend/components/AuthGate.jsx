@@ -18,11 +18,13 @@ export function AuthGate({ children }) {
   useEffect(() => {
     if (!session && location.pathname !== '/login') navigate('/login', { replace: true })
     if (session && location.pathname === '/student' && session.role !== 'learner') navigate('/', { replace: true })
+    if (session && location.pathname === '/training' && session.role !== 'training') navigate('/', { replace: true })
   }, [location.pathname, navigate, session])
 
   if (session && location.pathname === '/student' && session.role !== 'learner') return null
+  if (session && location.pathname === '/training' && session.role !== 'training') return null
   if (session) return children
-  return <AuthScreen onLogin={(user) => { localStorage.setItem('skillsync-session', JSON.stringify(user)); setSession(user); navigate(user.role === 'learner' ? '/student' : '/', { replace: true }) }} />
+  return <AuthScreen onLogin={(user) => { localStorage.setItem('skillsync-session', JSON.stringify(user)); setSession(user); navigate(user.role === 'learner' ? '/student' : user.role === 'training' ? '/training' : '/', { replace: true }) }} />
 }
 
 function AuthScreen({ onLogin }) {
