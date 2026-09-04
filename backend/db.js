@@ -1,7 +1,7 @@
 import { MongoClient } from 'mongodb'
+import { env } from './config/env.js'
 
-const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017'
-const databaseName = process.env.MONGODB_DB_NAME || 'SIH26134'
+const { mongodbUri: uri, mongodbDbName: databaseName } = env
 
 export const domainCollections = [
   'users',
