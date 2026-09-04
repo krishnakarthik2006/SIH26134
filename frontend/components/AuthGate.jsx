@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, BriefcaseBusiness, Check, GraduationCap, LockKeyhole, MapPinned, Sparkles, Users } from 'lucide-react'
+import { canAccessRoute, routeForRole } from '../routePermissions.js'
 
 const roles = [
   { id: 'industry', label: 'Industry partner', description: 'Publish roles and validate in-demand skills.', icon: BriefcaseBusiness, tone: 'coral' },
@@ -17,18 +18,12 @@ export function AuthGate({ children }) {
 
   useEffect(() => {
     if (!session && location.pathname !== '/login') navigate('/login', { replace: true })
-    if (session && location.pathname === '/student' && session.role !== 'learner') navigate('/', { replace: true })
-    if (session && location.pathname === '/training' && session.role !== 'training') navigate('/', { replace: true })
-    if (session && location.pathname === '/industry' && session.role !== 'industry') navigate('/', { replace: true })
-    if (session && location.pathname === '/government' && session.role !== 'government') navigate('/', { replace: true })
+    if (session && !canAccessRoute(location.pathname, session.role)) navigate('/', { replace: true })
   }, [location.pathname, navigate, session])
 
-  if (session && location.pathname === '/student' && session.role !== 'learner') return null
-  if (session && location.pathname === '/training' && session.role !== 'training') return null
-  if (session && location.pathname === '/industry' && session.role !== 'industry') return null
-  if (session && location.pathname === '/government' && session.role !== 'government') return null
+  if (session && !canAccessRoute(location.pathname, session.role)) return null
   if (session) return children
-  return <AuthScreen onLogin={(user) => { localStorage.setItem('skillsync-session', JSON.stringify(user)); setSession(user); navigate(user.role === 'learner' ? '/student' : user.role === 'training' ? '/training' : user.role === 'industry' ? '/industry' : user.role === 'government' ? '/government' : '/', { replace: true }) }} />
+  return <AuthScreen onLogin={(user) => { localStorage.setItem('skillsync-session', JSON.stringify(user)); setSession(user); navigate(routeForRole(user.role), { replace: true }) }} />
 }
 
 function AuthScreen({ onLogin }) {

@@ -7,6 +7,8 @@
     "dev": "concurrently \"npm run server\" \"vite\"",
     "server": "nodemon backend/server.js",
     "client": "vite",
+    "test:permissions": "node --test tests/security-permissions.test.mjs",
+    "test:e2e": "node tests/e2e-smoke.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
