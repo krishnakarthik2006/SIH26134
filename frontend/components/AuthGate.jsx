@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, BriefcaseBusiness, Check, GraduationCap, LockKeyhole, MapPinned, Sparkles, Users } from 'lucide-react'
 import { canAccessRoute, routeForRole } from '../routePermissions.js'
 
@@ -18,10 +18,16 @@ export function AuthGate({ children }) {
 
   useEffect(() => {
     if (!session && location.pathname !== '/login') navigate('/login', { replace: true })
-    if (session && !canAccessRoute(location.pathname, session.role)) navigate('/', { replace: true })
   }, [location.pathname, navigate, session])
 
-  if (session && !canAccessRoute(location.pathname, session.role)) return null
+  // Do not mount a dashboard at /login when a stale or active session exists.
+  // Redirecting during render also prevents its lazy modules from loading first.
+  if (session && location.pathname === '/login') {
+    return <Navigate to={routeForRole(session.role)} replace />
+  }
+  if (session && !canAccessRoute(location.pathname, session.role)) {
+    return <Navigate to={routeForRole(session.role)} replace />
+  }
   if (session) return children
   return <AuthScreen onLogin={(user) => { localStorage.setItem('skillsync-session', JSON.stringify(user)); setSession(user); navigate(routeForRole(user.role), { replace: true }) }} />
 }

@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': 'http://localhost:4000',
+      // The trailing slash keeps Vite source modules such as /api.js local;
+      // only actual backend requests (for example /api/auth/login) proxy.
+      '/api/': 'http://localhost:4000',
     },
   },
 })
