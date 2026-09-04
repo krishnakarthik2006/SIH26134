@@ -8,6 +8,7 @@ import TrainingDashboard from './components/TrainingDashboard.jsx'
 import IndustryDashboard from './components/IndustryDashboard.jsx'
 import GovernmentDashboard from './components/GovernmentDashboard.jsx'
 import AIIntelligence from './components/AIIntelligence.jsx'
+import AnalyticsDashboard from './components/AnalyticsDashboard.jsx'
 import './styles.css'
 
 createRoot(document.getElementById('root')).render(
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/industry" element={<AuthGate><IndustryDashboard /></AuthGate>} />
         <Route path="/government" element={<AuthGate><GovernmentDashboard /></AuthGate>} />
         <Route path="/intelligence" element={<AuthGate><AIIntelligence /></AuthGate>} />
+        <Route path="/analytics" element={<AuthGate><AnalyticsDashboard /></AuthGate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
