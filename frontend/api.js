@@ -46,6 +46,37 @@ export const getStudentProfile = () =>
 export const updateStudentProfile = (payload) =>
   api.patch('/profiles/student', payload).then(({ data }) => data)
 
+// ---------------------------------------------------------------------------
+// Student skill gap & readiness  (/api/student)
+// ---------------------------------------------------------------------------
+
+/** Fetch the learner's configured target job role. */
+export const getStudentTargetRole = () =>
+  api.get('/student/target-role').then(({ data }) => data)
+
+/** Select a job role to use as the learner's readiness target. */
+export const updateStudentTargetRole = (jobRoleId) =>
+  api.patch('/student/target-role', { jobRoleId }).then(({ data }) => data)
+
+/** Fetch the learner's saved current skills. */
+export const getStudentCurrentSkills = () =>
+  api.get('/student/current-skills').then(({ data }) => data)
+
+/** Replace the learner's current skills (canonical IDs are resolved when known). */
+export const updateStudentCurrentSkills = (currentSkills) =>
+  api.patch('/student/current-skills', { currentSkills }).then(({ data }) => data)
+
+/** Fetch all skills required by the learner's configured target role. */
+export const getStudentRequiredSkills = () =>
+  api.get('/student/required-skills').then(({ data }) => data)
+
+/**
+ * Get the complete B10 report: target/current/required skills, missing and
+ * partial skills, strengths, skill-gap score, and job-readiness score.
+ */
+export const getStudentReadiness = () =>
+  api.get('/student/readiness').then(({ data }) => data)
+
 // Training provider
 export const getTrainingProfile = () =>
   api.get('/profiles/training').then(({ data }) => data)

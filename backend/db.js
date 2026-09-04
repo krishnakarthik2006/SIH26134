@@ -32,7 +32,11 @@ export const domainCollections = [
 
 const indexes = {
   users: [[{ email: 1 }, { unique: true, sparse: true }], [{ role: 1 }]],
-  students: [[{ userId: 1 }, { unique: true, sparse: true }], [{ targetRole: 1 }]],
+  students: [
+    [{ userId: 1 }, { unique: true, sparse: true }],
+    [{ targetRole: 1 }],
+    [{ targetJobRoleId: 1 }],
+  ],
   skills: [
     // Unique lookup by normalizedName (dedup guard)
     [{ normalizedName: 1 }, { unique: true, sparse: true }],
