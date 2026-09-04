@@ -281,4 +281,154 @@ export const setJobSkills = (id, skills) =>
 export const removeJobSkill = (id, skillRef) =>
   api.delete(`/jobs/${id}/skills/${skillRef}`).then(({ data }) => data)
 
+// ---------------------------------------------------------------------------
+// Training Providers  (/api/training/providers)
+//
+// Public:
+//   getProviders(params)            — list (type, district, region, accreditation, page, limit, sort, order)
+//   searchProviders(params)         — regex search on name/type/district/description
+//   getProvider(id)                 — fetch one provider
+//   getProviderPrograms(id, params) — programs under a provider
+//
+// Protected (training | government):
+//   createProvider(payload)         — create provider
+//   updateProvider(id, payload)     — partial update (owner or government)
+//
+// Protected (government only):
+//   deleteProvider(id)              — soft-delete + cascade programs + curriculums
+// ---------------------------------------------------------------------------
+
+export const getProviders = (params = {}) =>
+  api.get('/training/providers', { params }).then(({ data }) => data)
+
+export const searchProviders = (params = {}) =>
+  api.get('/training/providers/search', { params }).then(({ data }) => data)
+
+export const getProvider = (id) =>
+  api.get(`/training/providers/${id}`).then(({ data }) => data)
+
+export const getProviderPrograms = (id, params = {}) =>
+  api.get(`/training/providers/${id}/programs`, { params }).then(({ data }) => data)
+
+export const createProvider = (payload) =>
+  api.post('/training/providers', payload).then(({ data }) => data)
+
+export const updateProvider = (id, payload) =>
+  api.patch(`/training/providers/${id}`, payload).then(({ data }) => data)
+
+export const deleteProvider = (id) =>
+  api.delete(`/training/providers/${id}`).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// Training Programs  (/api/training/programs)
+//
+// Public:
+//   getPrograms(params)               — list (providerId, status, mode, tag, page, limit, sort, order)
+//   searchPrograms(params)            — search (q, providerId, status, limit)
+//   getProgram(id)                    — fetch one program
+//   getProgramCurriculums(id, params) — curriculum versions for a program
+//
+// Protected (training | government):
+//   createProgram(payload)            — create program
+//   updateProgram(id, payload)        — partial update (owner or government)
+//   deleteProgram(id)                 — soft-delete + cascade curriculums (owner or government)
+// ---------------------------------------------------------------------------
+
+export const getPrograms = (params = {}) =>
+  api.get('/training/programs', { params }).then(({ data }) => data)
+
+export const searchPrograms = (params = {}) =>
+  api.get('/training/programs/search', { params }).then(({ data }) => data)
+
+export const getProgram = (id) =>
+  api.get(`/training/programs/${id}`).then(({ data }) => data)
+
+export const getProgramCurriculums = (id, params = {}) =>
+  api.get(`/training/programs/${id}/curriculums`, { params }).then(({ data }) => data)
+
+export const createProgram = (payload) =>
+  api.post('/training/programs', payload).then(({ data }) => data)
+
+export const updateProgram = (id, payload) =>
+  api.patch(`/training/programs/${id}`, payload).then(({ data }) => data)
+
+export const deleteProgram = (id) =>
+  api.delete(`/training/programs/${id}`).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// Curriculums  (/api/training/curriculums)
+//
+// Public:
+//   getCurriculum(id)                 — fetch full curriculum (modules + skills)
+//
+// Protected (training | government):
+//   createCurriculum(payload)         — create / upload curriculum
+//   updateCurriculum(id, payload)     — update metadata (owner or government)
+//   deleteCurriculum(id)              — soft-delete (owner or government)
+//
+//   addModules(id, modules[])                    — upsert-merge modules by title
+//   updateModule(id, moduleId, payload)          — update one module
+//   deleteModule(id, moduleId)                   — remove one module
+//
+//   setSkillsCovered(id, skillsCovered[])        — upsert-merge covered skills
+//   removeSkillCovered(id, skillRef)             — remove one covered skill (by id or name)
+// ---------------------------------------------------------------------------
+
+export const getCurriculum = (id) =>
+  api.get(`/training/curriculums/${id}`).then(({ data }) => data)
+
+/**
+ * Create / upload a curriculum.
+ * @param {object} payload - trainingProgramId*, title*, version, status,
+ *   description, content, learningObjectives[], totalHours,
+ *   modules[], skillsCovered[]
+ */
+export const createCurriculum = (payload) =>
+  api.post('/training/curriculums', payload).then(({ data }) => data)
+
+export const updateCurriculum = (id, payload) =>
+  api.patch(`/training/curriculums/${id}`, payload).then(({ data }) => data)
+
+export const deleteCurriculum = (id) =>
+  api.delete(`/training/curriculums/${id}`).then(({ data }) => data)
+
+/**
+ * Add / upsert modules to a curriculum (upserts by title).
+ * @param {string}   id      — curriculum id
+ * @param {object[]} modules — [{ title*, description, durationHours, order, topics[] }]
+ */
+export const addModules = (id, modules) =>
+  api.post(`/training/curriculums/${id}/modules`, { modules }).then(({ data }) => data)
+
+/**
+ * Update a single module by its UUID.
+ * @param {string} id       — curriculum id
+ * @param {string} moduleId — module UUID
+ * @param {object} payload  — { title, description, durationHours, order, topics[] }
+ */
+export const updateModule = (id, moduleId, payload) =>
+  api.patch(`/training/curriculums/${id}/modules/${moduleId}`, payload).then(({ data }) => data)
+
+/**
+ * Remove a module by its UUID.
+ */
+export const deleteModule = (id, moduleId) =>
+  api.delete(`/training/curriculums/${id}/modules/${moduleId}`).then(({ data }) => data)
+
+/**
+ * Set / upsert covered skills on a curriculum.
+ * @param {string}   id            — curriculum id
+ * @param {object[]} skillsCovered — [{ skillId?, skillName*, coverage?, proficiencyLevel? }]
+ */
+export const setSkillsCovered = (id, skillsCovered) =>
+  api.post(`/training/curriculums/${id}/skills`, { skillsCovered }).then(({ data }) => data)
+
+/**
+ * Remove one covered skill by skillId UUID or skillName string.
+ * @param {string} id        — curriculum id
+ * @param {string} skillRef  — skillId or skillName
+ */
+export const removeSkillCovered = (id, skillRef) =>
+  api.delete(`/training/curriculums/${id}/skills/${encodeURIComponent(skillRef)}`).then(({ data }) => data)
+
 export default api
