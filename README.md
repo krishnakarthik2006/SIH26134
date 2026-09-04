@@ -21,6 +21,15 @@ Then open the local URL printed by Vite. This phase is intentionally limited to 
 
 The backend connects to MongoDB before opening port `4000`. Configure `MONGODB_URI` and `MONGODB_DB_NAME` in a local `.env` file using `.env.example` as a template. The connection is verified with a `ping` command and reported by `GET /api/health`.
 
+## Authentication API
+
+- `POST /api/auth/register` - create a role-scoped account
+- `POST /api/auth/login` - issue a JWT access token
+- `GET /api/auth/me` - return the authenticated current user
+- `POST /api/auth/logout` - invalidate the current token session
+
+Send protected requests with `Authorization: Bearer <token>`. Passwords are stored as bcrypt hashes; JWT secrets must be supplied through `JWT_SECRET` outside local development.
+
 ## Product direction
 
 The interface is organized around one continuous loop:
