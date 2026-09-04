@@ -25,7 +25,6 @@ import { Router } from 'express'
 import { getDatabase } from '../db.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
-import { buildNormalizedTerm } from '../services/normalization.js'
 
 const router = Router()
 
@@ -54,8 +53,14 @@ function conflict(msg) {
  * A skill written as "Power-BI", "Power_BI", or "Power BI" must be stored
  * in the same form that the normalizer will later use for its lookup.
  */
+/**
+ * Normalize an alias for storage and lookup.
+ * Lighter than buildNormalizedTerm — only lowercases and trims.
+ * Hyphens, dots and other characters are preserved so aliases like
+ * "py-3", "c++" or "scikit-learn" round-trip correctly.
+ */
 function normalize(name) {
-  return buildNormalizedTerm(name)
+  return name.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
 /** Strip _id, return id instead */

@@ -28,6 +28,7 @@ export const domainCollections = [
   'regional_skill_gaps',
   'reports',
   'government_profiles',
+  'notifications',
 ]
 
 const indexes = {
@@ -145,7 +146,6 @@ const indexes = {
     [{ 'extractedSkills.normalizedName': 1 }],
     [{ 'extractedSkills.category': 1 }],
   ],
-  program_alignments: [[{ trainingProgramId: 1, jobRoleId: 1 }], [{ score: -1 }]],
   skill_gaps: [
     // Primary query pattern: all gaps for a given subject + role
     [{ subjectType: 1, subjectId: 1, targetRole: 1 }],
@@ -192,14 +192,72 @@ const indexes = {
     [{ createdAt: -1 }],
     [{ 'recommendations.programId': 1 }],
   ],
-  learning_roadmaps: [[{ studentId: 1, status: 1 }]],
-  assessments: [[{ skillId: 1 }], [{ courseId: 1 }]],
-  assessment_attempts: [[{ studentId: 1, completedAt: -1 }]],
-  skill_demand: [[{ skillId: 1, roleId: 1 }], [{ region: 1, recordedAt: -1 }]],
-  skill_trends: [[{ skillId: 1, recordedAt: -1 }]],
-  regional_skill_gaps: [[{ region: 1, skillId: 1 }], [{ priority: 1 }]],
-  reports: [[{ ownerId: 1, createdAt: -1 }], [{ type: 1 }]],
-  government_profiles: [[{ userId: 1 }, { unique: true, sparse: true }], [{ region: 1 }]],
+  learning_roadmaps: [
+    [{ studentId: 1, status: 1 }],
+    [{ ownerId: 1, status: 1 }],
+    [{ ownerId: 1, createdAt: -1 }],
+    [{ jobRoleId: 1 }],
+    [{ isDeleted: 1 }],
+  ],
+  assessments: [
+    [{ skillId: 1 }],
+    [{ courseId: 1 }],
+    [{ type: 1 }],
+    [{ level: 1 }],
+    [{ isDeleted: 1 }],
+    [{ createdBy: 1 }],
+    [{ tags: 1 }],
+  ],
+  assessment_attempts: [
+    [{ studentId: 1, completedAt: -1 }],
+    [{ assessmentId: 1 }],
+    [{ studentId: 1, assessmentId: 1 }],
+    [{ status: 1 }],
+    [{ submittedAt: -1 }],
+  ],
+  skill_demand: [
+    [{ skillId: 1, roleId: 1 }],
+    [{ region: 1, recordedAt: -1 }],
+    [{ skillId: 1, recordedAt: -1 }],
+    [{ sector: 1 }],
+    [{ demandScore: -1 }],
+    [{ recordedAt: -1 }],
+  ],
+  skill_trends: [
+    [{ skillId: 1, recordedAt: -1 }],
+    [{ growthRate: -1 }],
+  ],
+  regional_skill_gaps: [
+    [{ region: 1, skillId: 1 }],
+    [{ priority: 1 }],
+    [{ region: 1 }],
+    [{ recordedAt: -1 }],
+  ],
+  reports: [
+    [{ ownerId: 1, createdAt: -1 }],
+    [{ type: 1 }],
+    [{ ownerRole: 1 }],
+    [{ subjectId: 1 }],
+    [{ generatedAt: -1 }],
+  ],
+  government_profiles: [
+    [{ userId: 1 }, { unique: true, sparse: true }],
+    [{ region: 1 }],
+  ],
+  notifications: [
+    [{ recipientId: 1, read: 1 }],
+    [{ recipientId: 1, createdAt: -1 }],
+    [{ read: 1 }],
+    [{ createdAt: -1 }],
+  ],
+  program_alignments: [
+    [{ trainingProgramId: 1, jobRoleId: 1 }],
+    [{ score: -1 }],
+    [{ trainingProgramId: 1 }],
+    [{ jobRoleId: 1 }],
+    [{ alignmentPct: -1 }],
+    [{ calculatedAt: -1 }],
+  ],
 }
 
 let client
@@ -244,10 +302,10 @@ async function initializeDatabase() {
  */
 async function dropObsoleteIndexes() {
   const drops = [
-    // skill_mappings: old non-unique sourceTerm_1 replaced by unique named index
-    { collection: 'skill_mappings', indexName: 'sourceTerm_1' },
-    // readiness_scores: old compound index replaced by new named unique one
-    { collection: 'readiness_scores', indexName: 'studentId_1_targetRole_1' },
+    { collection: 'skill_mappings',  indexName: 'sourceTerm_1' },
+    { collection: 'readiness_scores',indexName: 'studentId_1_targetRole_1' },
+    // program_alignments: old 2-field compound replaced by named multi-index set
+    { collection: 'program_alignments', indexName: 'trainingProgramId_1_jobRoleId_1' },
   ]
   for (const { collection, indexName } of drops) {
     try {

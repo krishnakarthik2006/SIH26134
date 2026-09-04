@@ -743,4 +743,307 @@ export const getSubjectRecommendations = (subjectType, subjectId, params = {}) =
 export const explainProgramRecommendation = (programId, gaps) =>
   api.get(`/recommendations/program/${programId}/explain`, { params: { gaps: JSON.stringify(gaps) } }).then(({ data }) => data)
 
+// ---------------------------------------------------------------------------
+// B12 — Learning Roadmap  (/api/roadmap)
+// ---------------------------------------------------------------------------
+
+/** Generate a learning roadmap from gaps + recommendations */
+export const generateRoadmap = (payload) =>
+  api.post('/roadmap/generate', payload).then(({ data }) => data)
+
+/** Learner's own roadmaps (paginated, optional ?status=) */
+export const getMyRoadmaps = (params = {}) =>
+  api.get('/roadmap/my', { params }).then(({ data }) => data)
+
+/** Fetch one roadmap by id */
+export const getRoadmap = (id) =>
+  api.get(`/roadmap/${id}`).then(({ data }) => data)
+
+/** Mark a step as completed */
+export const completeStep = (roadmapId, stepId, notes = '') =>
+  api.patch(`/roadmap/${roadmapId}/steps/${stepId}/complete`, { notes }).then(({ data }) => data)
+
+/** Revert a step to pending */
+export const uncompleteStep = (roadmapId, stepId) =>
+  api.patch(`/roadmap/${roadmapId}/steps/${stepId}/uncomplete`).then(({ data }) => data)
+
+/** Update roadmap status: active | paused | completed | abandoned */
+export const updateRoadmapStatus = (id, status) =>
+  api.patch(`/roadmap/${id}/status`, { status }).then(({ data }) => data)
+
+/** Recalculate roadmap after skills improve */
+export const recalculateRoadmap = (id, currentSkills = []) =>
+  api.post(`/roadmap/${id}/recalculate`, { currentSkills }).then(({ data }) => data)
+
+/** Delete a roadmap */
+export const deleteRoadmap = (id) =>
+  api.delete(`/roadmap/${id}`).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// B13 — Training Alignment  (/api/alignment)
+// ---------------------------------------------------------------------------
+
+/** Calculate (and optionally persist) curriculum ↔ job role alignment */
+export const calculateAlignment = (programId, jobRoleId, persist = true) =>
+  api.post('/alignment/calculate', { programId, jobRoleId, persist }).then(({ data }) => data)
+
+/** All alignments for a training program */
+export const getProgramAlignments = (programId) =>
+  api.get(`/alignment/program/${programId}`).then(({ data }) => data)
+
+/** All programs aligned to a job role */
+export const getJobRoleAlignments = (jobRoleId) =>
+  api.get(`/alignment/job/${jobRoleId}`).then(({ data }) => data)
+
+/** Fetch one alignment record */
+export const getAlignment = (id) =>
+  api.get(`/alignment/${id}`).then(({ data }) => data)
+
+/** Get curriculum improvement recommendations across multiple job roles */
+export const getCurriculumImprovements = (programId, jobRoleIds) =>
+  api.post('/alignment/improvements', { programId, jobRoleIds }).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// B14 — Industry Demand & Emerging Skills  (/api/demand)
+// ---------------------------------------------------------------------------
+
+/** Top high-demand skills (optional: sector, region, limit, minDemandScore) */
+export const getDemandSkills = (params = {}) =>
+  api.get('/demand/skills', { params }).then(({ data }) => data)
+
+/** Demand details + history for one skill */
+export const getSkillDemand = (skillId) =>
+  api.get(`/demand/skills/${skillId}`).then(({ data }) => data)
+
+/** Record a demand signal for a skill (industry/government) */
+export const recordDemandSignal = (skillId, payload) =>
+  api.post(`/demand/skills/${skillId}`, payload).then(({ data }) => data)
+
+/** Skill growth trends */
+export const getDemandTrends = (params = {}) =>
+  api.get('/demand/trends', { params }).then(({ data }) => data)
+
+/** Emerging / fast-growing skills */
+export const getEmergingSkills = (params = {}) =>
+  api.get('/demand/emerging', { params }).then(({ data }) => data)
+
+/** Skills with high demand but low training supply */
+export const getSkillShortages = (params = {}) =>
+  api.get('/demand/shortages', { params }).then(({ data }) => data)
+
+/** Demand profile for a job role */
+export const getDemandByRole = (jobRoleId) =>
+  api.get(`/demand/by-role/${jobRoleId}`).then(({ data }) => data)
+
+/** Demand profile for an industry */
+export const getDemandByIndustry = (industryId) =>
+  api.get(`/demand/by-industry/${industryId}`).then(({ data }) => data)
+
+/** Bulk ingest demand signals */
+export const bulkRecordDemandSignals = (signals) =>
+  api.post('/demand/bulk', { signals }).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// B15 — Government Intelligence  (/api/intelligence)
+// ---------------------------------------------------------------------------
+
+/** Regional skill gaps */
+export const getRegionalGaps = (params = {}) =>
+  api.get('/intelligence/regional-gaps', { params }).then(({ data }) => data)
+
+/** Training supply vs industry demand */
+export const getSupplyDemand = (params = {}) =>
+  api.get('/intelligence/supply-demand', { params }).then(({ data }) => data)
+
+/** High-demand, low-training regions */
+export const getUnderservedAreas = () =>
+  api.get('/intelligence/underserved-areas').then(({ data }) => data)
+
+/** Top-level government dashboard overview */
+export const getGovernmentOverview = () =>
+  api.get('/intelligence/overview').then(({ data }) => data)
+
+/** Skills × regions heat matrix */
+export const getSkillMatrix = (params = {}) =>
+  api.get('/intelligence/skill-matrix', { params }).then(({ data }) => data)
+
+/** Record a regional skill gap (government) */
+export const recordRegionalGap = (payload) =>
+  api.post('/intelligence/regional-gaps/record', payload).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// B16 — Assessments  (/api/assessments)
+// ---------------------------------------------------------------------------
+
+/** Create an assessment (training/government) */
+export const createAssessment = (payload) =>
+  api.post('/assessments', payload).then(({ data }) => data)
+
+/** List assessments (optional: skillId, type, level) */
+export const listAssessments = (params = {}) =>
+  api.get('/assessments', { params }).then(({ data }) => data)
+
+/** Assessments for a specific skill */
+export const getSkillAssessments = (skillId) =>
+  api.get(`/assessments/skill/${skillId}`).then(({ data }) => data)
+
+/** Fetch one assessment */
+export const getAssessment = (id) =>
+  api.get(`/assessments/${id}`).then(({ data }) => data)
+
+/** Update assessment (owner/government) */
+export const updateAssessment = (id, payload) =>
+  api.patch(`/assessments/${id}`, payload).then(({ data }) => data)
+
+/** Delete assessment (government) */
+export const deleteAssessment = (id) =>
+  api.delete(`/assessments/${id}`).then(({ data }) => data)
+
+/** Submit an attempt (learner) */
+export const submitAttempt = (assessmentId, payload) =>
+  api.post(`/assessments/${assessmentId}/attempt`, payload).then(({ data }) => data)
+
+/** Get all attempts for an assessment (training/government) */
+export const getAssessmentAttempts = (assessmentId, params = {}) =>
+  api.get(`/assessments/${assessmentId}/attempts`, { params }).then(({ data }) => data)
+
+/** Learner's own attempts */
+export const getMyAttempts = (params = {}) =>
+  api.get('/assessments/my/attempts', { params }).then(({ data }) => data)
+
+/** Grade a submitted attempt (training/government) */
+export const gradeAttempt = (assessmentId, attemptId, payload) =>
+  api.post(`/assessments/${assessmentId}/attempt/${attemptId}/grade`, payload).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// B17 — Reports  (/api/reports)
+// ---------------------------------------------------------------------------
+
+/** Generate and persist a report */
+export const generateReport2 = (payload) =>
+  api.post('/reports/generate', payload).then(({ data }) => data)
+
+/** Own reports (paginated) */
+export const getMyReports = (params = {}) =>
+  api.get('/reports/my', { params }).then(({ data }) => data)
+
+/** Fetch one report (with data) */
+export const getReport = (id) =>
+  api.get(`/reports/${id}`).then(({ data }) => data)
+
+/** Download report as JSON attachment */
+export const downloadReport = (id) =>
+  api.get(`/reports/${id}/download`).then(({ data }) => data)
+
+/** Delete a report */
+export const deleteReport = (id) =>
+  api.delete(`/reports/${id}`).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// B17 — Notifications  (/api/notifications)
+// ---------------------------------------------------------------------------
+
+/** Own notifications (optional: ?unreadOnly=true) */
+export const getMyNotifications = (params = {}) =>
+  api.get('/notifications/my', { params }).then(({ data }) => data)
+
+/** Create notification (internal/admin) */
+export const createNotification = (payload) =>
+  api.post('/notifications', payload).then(({ data }) => data)
+
+/** Mark one notification as read */
+export const markNotificationRead2 = (id) =>
+  api.patch(`/notifications/${id}/read`).then(({ data }) => data)
+
+/** Mark all notifications as read */
+export const markAllNotificationsRead = () =>
+  api.patch('/notifications/read-all').then(({ data }) => data)
+
+/** Delete a notification */
+export const deleteNotification = (id) =>
+  api.delete(`/notifications/${id}`).then(({ data }) => data)
+
+// ---------------------------------------------------------------------------
+// B18 — API Integration Utilities
+// ---------------------------------------------------------------------------
+
+/**
+ * Full learner onboarding flow helper.
+ * 1. Set target job role  2. Set current skills  3. Run gap analysis  4. Generate roadmap + recommendations
+ *
+ * @param {{ jobRoleId, currentSkills[], subjectId }} params
+ */
+export async function learnerOnboardingFlow({ jobRoleId, currentSkills, subjectId }) {
+  // 1. Set target role
+  await updateStudentTargetRole(jobRoleId)
+
+  // 2. Set skills
+  await api.patch('/student/current-skills', { currentSkills })
+
+  // 3. Fetch required skills from job role
+  const { targetJobRole } = await getStudentTargetRole()
+  const requiredSkills = targetJobRole?.requiredSkills || []
+
+  if (!requiredSkills.length) {
+    return { message: 'Job role has no required skills', readinessScore: 100, recommendations: [], roadmap: null }
+  }
+
+  // 4. Run gap analysis (persisted)
+  const gapResult = await api.post('/match/job/' + jobRoleId, {
+    currentSkills, persist: true, subjectType: 'learner', subjectId,
+  }).then(r => r.data)
+
+  const gaps = gapResult.result?.gaps || []
+
+  // 5. Generate recommendations
+  const recs = gaps.length
+    ? await previewRecommendations(gaps, { limit: 5 })
+    : { recommendations: [] }
+
+  // 6. Generate roadmap if there are gaps
+  const roadmap = gaps.length
+    ? await generateRoadmap({ subjectId, targetRole: targetJobRole.title, jobRoleId, gaps, currentSkills })
+    : null
+
+  return {
+    readinessScore: gapResult.result?.readinessScore,
+    gapSeverity:    gapResult.result?.gapSeverity,
+    gapCount:       gaps.length,
+    recommendations: recs.recommendations,
+    roadmap:         roadmap?.roadmap || null,
+  }
+}
+
+/**
+ * Health check — verify all critical API endpoints are reachable.
+ * Returns a report of which subsystems are up.
+ */
+export async function healthCheckAll() {
+  const endpoints = [
+    { name: 'API',            path: '/health' },
+    { name: 'Auth',           path: '/auth/me' },
+    { name: 'Skills',         path: '/skills?limit=1' },
+    { name: 'Industries',     path: '/industries?limit=1' },
+    { name: 'Jobs',           path: '/jobs?limit=1' },
+    { name: 'Training',       path: '/training/programs?limit=1' },
+    { name: 'Recommendations',path: '/recommendations/my?limit=1' },
+    { name: 'Demand',         path: '/demand/skills?limit=1' },
+    { name: 'Intelligence',   path: '/intelligence/overview' },
+  ]
+  const results = await Promise.allSettled(
+    endpoints.map(async e => {
+      const start = Date.now()
+      await api.get(e.path)
+      return { name: e.name, status: 'up', latencyMs: Date.now() - start }
+    }),
+  )
+  return results.map((r, i) => ({
+    name:      endpoints[i].name,
+    status:    r.status === 'fulfilled' ? 'up' : 'down',
+    latencyMs: r.value?.latencyMs || null,
+    error:     r.reason?.message || null,
+  }))
+}
+
 export default api
+
