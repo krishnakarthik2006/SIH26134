@@ -18,6 +18,7 @@ import {
   Gauge,
   GitCompareArrows,
   HelpCircle,
+  Lightbulb,
   ListChecks,
   Loader2,
   Plus,
@@ -31,6 +32,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { normalizeTermsBatch, adHocMatch } from '../api.js'
+import { RecommendationEnginePanel } from './RecommendationDashboard.jsx'
 import './skill-matching.css'
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
@@ -576,7 +578,7 @@ function SkillMatcherPanel({ onResult }) {
 
 // ─── PANEL 3 — GAP REPORT ─────────────────────────────────────────────────────
 
-function GapReport({ result }) {
+function GapReport({ result, onRecommend }) {
   const [expandSurplus, setExpandSurplus] = useState(false)
   const SeverityIcon = severityMeta(result.gapSeverity).icon
 
@@ -687,7 +689,7 @@ function GapReport({ result }) {
                 <span className={`smb-req-tag ${g.requirement === 'required' ? 'coral' : g.requirement === 'preferred' ? 'blue' : 'yellow'}`}>
                   {g.priorityLabel}
                 </span>
-                <button className="smb-find-course-btn">
+                <button className="smb-find-course-btn" onClick={onRecommend}>
                   <TrendingUp size={11} /> Find training
                 </button>
               </div>
@@ -732,6 +734,7 @@ const TABS = [
   { id: 'normalize', label: 'Normalization lab',  icon: FlaskConical },
   { id: 'match',     label: 'Skill matcher',       icon: GitCompareArrows },
   { id: 'gap',       label: 'Gap report',          icon: Gauge,      badge: null },
+  { id: 'recommend', label: 'Course recommend',    icon: Lightbulb,  badge: null },
 ]
 
 export default function SkillMatchingDashboard() {
@@ -743,9 +746,11 @@ export default function SkillMatchingDashboard() {
     setActiveTab('gap')
   }, [])
 
-  const tabs = TABS.map((t) =>
-    t.id === 'gap' ? { ...t, badge: matchResult ? '!' : null } : t,
-  )
+  const tabs = TABS.map((t) => {
+    if (t.id === 'gap') return { ...t, badge: matchResult ? '!' : null }
+    if (t.id === 'recommend') return { ...t, badge: matchResult?.gaps?.length || null }
+    return t
+  })
 
   return (
     <div className="smb-shell">
@@ -754,13 +759,13 @@ export default function SkillMatchingDashboard() {
         <div className="smb-header-left">
           <div className="smb-header-icon"><Sparkles size={19} /></div>
           <div>
-            <p className="smb-kicker">PHASE B9</p>
-            <h1>Skill Normalization &amp; Matching</h1>
+            <p className="smb-kicker">PHASE B9–B11</p>
+            <h1>Skill matching &amp; course recommendations</h1>
           </div>
         </div>
         <div className="smb-header-right">
           <div className="smb-pipeline-flow">
-            {['Raw variants', 'Normalize', 'Required + Current', 'Match', 'Skill Gap'].map((step, i, arr) => (
+            {['Raw variants', 'Normalize', 'Match', 'Skill Gap', 'Recommend'].map((step, i, arr) => (
               <span key={step} className="smb-pipeline-step-wrap">
                 <span className={`smb-pipeline-step ${i % 2 === 0 ? 'filled' : 'arrow'}`}>{step}</span>
                 {i < arr.length - 1 && <ArrowRight size={12} className="smb-pipeline-arrow" />}
@@ -781,7 +786,7 @@ export default function SkillMatchingDashboard() {
         )}
         {activeTab === 'gap' && (
           matchResult
-            ? <GapReport result={matchResult} />
+            ? <GapReport result={matchResult} onRecommend={() => setActiveTab('recommend')} />
             : (
               <div className="smb-gap-placeholder">
                 <Target size={40} strokeWidth={1.2} />
@@ -792,6 +797,12 @@ export default function SkillMatchingDashboard() {
                 </button>
               </div>
             )
+        )}
+        {activeTab === 'recommend' && (
+          <RecommendationEnginePanel
+            key={matchResult ? 'from-gaps' : 'demo'}
+            initialGaps={matchResult?.gaps}
+          />
         )}
       </div>
     </div>

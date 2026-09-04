@@ -16,6 +16,7 @@ import { asyncHandler } from '../middleware/errorHandler.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
 import { LEVEL_NAMES, matchSkills } from '../services/matcher.js'
 import { normalizeTerms } from '../services/normalization.js'
+import { recommendForGaps, SCORING_WEIGHTS } from '../services/recommender.js'
 
 const router = Router()
 router.use(requireAuth, requireRole('learner'))
@@ -273,6 +274,51 @@ router.get('/readiness', asyncHandler(async (req, res) => {
   validateCurrentSkills(currentSkills)
   const match = await matchSkills(role.requiredSkills || [], currentSkills)
   res.json({ report: buildReadinessReport(student, role, match) })
+}))
+
+/**
+ * GET /api/student/recommendations
+ * Recommend courses for the learner's current missing + partial skills.
+ */
+router.get('/recommendations', asyncHandler(async (req, res) => {
+  const { student, role } = await requireStudentWithTargetRole(req.user.id)
+  const currentSkills = student.currentSkills || []
+  validateCurrentSkills(currentSkills)
+  const match = await matchSkills(role.requiredSkills || [], currentSkills)
+
+  const gaps = [
+    ...match.gaps,
+    ...match.matched.filter(skill => skill.levelGap > 0).map(skill => ({
+      canonicalId: skill.canonicalId,
+      skillName: skill.skillName,
+      requiredLevel: skill.requiredLevel,
+      requirement: skill.requirement,
+    })),
+  ]
+
+  if (gaps.length === 0) {
+    return res.json({
+      recommendations: [],
+      count: 0,
+      gapCount: 0,
+      targetRole: role.title,
+      message: 'No missing skills — you already meet this role. Keep practising to stay current.',
+      scoring: { weights: SCORING_WEIGHTS },
+    })
+  }
+
+  const limit = Math.min(25, Math.max(1, parseInt(req.query.limit, 10) || 10))
+  const prioritizeCritical = req.query.prioritizeCritical !== 'false'
+  const recommendations = await recommendForGaps(gaps, { limit, prioritizeCritical })
+
+  res.json({
+    recommendations,
+    count: recommendations.length,
+    gapCount: gaps.length,
+    targetRole: role.title,
+    jobReadinessScore: match.readinessScore,
+    scoring: { weights: SCORING_WEIGHTS },
+  })
 }))
 
 export default router

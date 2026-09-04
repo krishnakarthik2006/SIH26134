@@ -177,8 +177,21 @@ const indexes = {
     // Time-based
     [{ calculatedAt: -1 }],
   ],
-  courses: [[{ skillIds: 1 }], [{ providerId: 1 }]],
-  recommendations: [[{ recipientType: 1, recipientId: 1 }], [{ status: 1 }]],
+  courses: [
+    [{ skillIds: 1 }],
+    [{ providerId: 1 }],
+    [{ isDeleted: 1 }],
+    [{ createdAt: -1 }],
+  ],
+  recommendations: [
+    [{ recipientType: 1, recipientId: 1 }],
+    [{ recipientType: 1, recipientId: 1, targetRole: 1 }],
+    [{ status: 1 }],
+    [{ generatedBy: 1 }],
+    [{ targetRole: 1 }],
+    [{ createdAt: -1 }],
+    [{ 'recommendations.programId': 1 }],
+  ],
   learning_roadmaps: [[{ studentId: 1, status: 1 }]],
   assessments: [[{ skillId: 1 }], [{ courseId: 1 }]],
   assessment_attempts: [[{ studentId: 1, completedAt: -1 }]],

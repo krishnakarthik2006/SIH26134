@@ -9,6 +9,7 @@ import trainingRouter from './routes/training.js'
 import processRouter from './routes/process.js'
 import normalizeRouter from './routes/normalize.js'
 import matchRouter from './routes/match.js'
+import recommendationsRouter from './routes/recommendations.js'
 import studentReadinessRouter from './routes/studentReadiness.js'
 import apiRouter from './routes/api.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
@@ -28,6 +29,7 @@ export function createApp() {
   app.use('/api/process', processRouter)
   app.use('/api/normalize', normalizeRouter)
   app.use('/api/match', matchRouter)
+  app.use('/api/recommendations', recommendationsRouter)
   app.use('/api/student', studentReadinessRouter)
   app.use('/api', apiRouter)
   app.use(notFoundHandler)

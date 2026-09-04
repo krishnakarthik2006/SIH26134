@@ -77,6 +77,10 @@ export const getStudentRequiredSkills = () =>
 export const getStudentReadiness = () =>
   api.get('/student/readiness').then(({ data }) => data)
 
+/** Recommend courses for the learner's missing and partial skills. */
+export const getStudentRecommendations = (params = {}) =>
+  api.get('/student/recommendations', { params }).then(({ data }) => data)
+
 // Training provider
 export const getTrainingProfile = () =>
   api.get('/profiles/training').then(({ data }) => data)
@@ -702,5 +706,41 @@ export const normalizeTermsBatch = normalizeSkills
 
 /** Alias for matchSkillsAdHoc — ad-hoc skill match (not persisted) */
 export const adHocMatch = matchSkillsAdHoc
+
+// ---------------------------------------------------------------------------
+// Recommendation Engine  (/api/recommendations)
+// ---------------------------------------------------------------------------
+
+/** Ad-hoc preview — not persisted */
+export const previewRecommendations = (gaps, opts = {}) =>
+  api.post('/recommendations/preview', { gaps, ...opts }).then(({ data }) => data)
+
+/** Generate + persist recommendations for a subject */
+export const generateRecommendations = (payload) =>
+  api.post('/recommendations/generate', payload).then(({ data }) => data)
+
+/** Learner convenience: auto-fetch gaps + recommend */
+export const getRecommendationsForMe = (opts = {}) =>
+  api.post('/recommendations/for-me', opts).then(({ data }) => data)
+
+/** Paginated list of recommendation sets for current learner */
+export const getMyRecommendations = (params = {}) =>
+  api.get('/recommendations/my', { params }).then(({ data }) => data)
+
+/** Fetch one recommendation set (auto-marks as viewed) */
+export const getRecommendation = (id) =>
+  api.get(`/recommendations/${id}`).then(({ data }) => data)
+
+/** Update recommendation status: viewed | enrolled | dismissed | completed */
+export const updateRecommendationStatus = (id, status) =>
+  api.patch(`/recommendations/${id}/status`, { status }).then(({ data }) => data)
+
+/** Recommendations for any subject (government / training view) */
+export const getSubjectRecommendations = (subjectType, subjectId, params = {}) =>
+  api.get(`/recommendations/subject/${subjectType}/${subjectId}`, { params }).then(({ data }) => data)
+
+/** Explain why a specific program is relevant to given gaps */
+export const explainProgramRecommendation = (programId, gaps) =>
+  api.get(`/recommendations/program/${programId}/explain`, { params: { gaps: JSON.stringify(gaps) } }).then(({ data }) => data)
 
 export default api
