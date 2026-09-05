@@ -54,16 +54,31 @@ npm run server
 npm run client
 ```
 
-### Python AI Service (FastAPI — port 8000)
+### Python AI Service (FastAPI + Ollama llama3.2 — port 8000)
+
+The AI service now uses **llama3.2:3b via local Ollama** for LLM-powered skill extraction.
+If Ollama is unavailable it falls back to the built-in rule-based engine automatically.
+
+**Step 1 — Start Ollama** (if not running as a system service):
+
+```bash
+ollama serve
+```
+
+**Step 2 — Start the AI service:**
+
+```bash
+cd ai_service
+pip install -r requirements.txt
+python run.py
+```
+
+Or directly:
 
 ```bash
 cd ai_service
 python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
-
-Or use the helper script:
-
-```bash
 cd ai_service
 python run.py
 ```
