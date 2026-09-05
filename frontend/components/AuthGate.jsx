@@ -46,7 +46,7 @@ function AuthScreen({ onLogin }) {
 
   const switchMode = (m) => { setMode(m); setError(''); reset() }
 
-  const submit = async (values) => {
+    const submit = async (values) => {
     setError('')
     try {
       let result
@@ -55,7 +55,6 @@ function AuthScreen({ onLogin }) {
       } else {
         result = await authLogin({ email: values.email, password: values.password })
       }
-      // Persist token + user into session
       const session = { ...result.user, token: result.token }
       onLogin(session)
     } catch (err) {
@@ -140,8 +139,9 @@ function AuthScreen({ onLogin }) {
             {serverError && <p className="auth-error" role="alert">{serverError}</p>}
 
             <button className="primary-button auth-submit" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Please wait…' : mode === 'login' ? 'Sign in to SkillSync' : 'Create account'}
-              {!isSubmitting && <ArrowRight size={16} />}
+              {isSubmitting
+                ? <><span className="auth-submit-spinner" /> Please wait…</>
+                : <>{mode === 'login' ? 'Sign in to SkillSync' : 'Create account'} <ArrowRight size={16} /></>}
             </button>
           </form>
 

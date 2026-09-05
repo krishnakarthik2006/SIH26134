@@ -1,42 +1,240 @@
-# SkillSync
+# SkillSync — Maharashtra Skill Intelligence Platform
 
-SkillSync is a connected labour-market intelligence workspace for aligning industry requirements, training curricula, learner pathways, assessments, and regional interventions.
+SIH 2026 · Project ID SIH26134
 
-## Local development
+A full-stack workforce alignment platform connecting industry demand, training providers, learners, and government — built for Maharashtra.
+
+---
+
+## Prerequisites
+
+| Tool | Minimum version | Install |
+|------|----------------|---------|
+| Node.js | 18+ | https://nodejs.org |
+| Python | 3.10+ | https://python.org |
+| MongoDB | 6+ | https://www.mongodb.com/try/download/community |
+
+MongoDB must be running locally on the default port **27017** before you start the backend.
+
+---
+
+## Quick start (everything at once)
 
 ```bash
+# 1. Install Node.js dependencies
 npm install
+
+# 2. Install Python dependencies for the AI service
+cd ai_service
+pip install -r requirements.txt
+cd ..
+
+# 3. Copy environment variables
+copy .env.example .env
+
+# 4. Run the full stack
 npm run dev
 ```
 
-Then open the local URL printed by Vite. This phase is intentionally limited to the React + Vite frontend foundation; deployment is out of scope.
+`npm run dev` starts **both** the Express backend (port 4000) and the Vite frontend (port 5173) concurrently.
+
+---
+
+## Running each service separately
+
+### Backend (Express API — port 4000)
+
+```bash
+npm run server
+```
+
+### Frontend (Vite dev server — port 5173)
+
+```bash
+npm run client
+```
+
+### Python AI Service (FastAPI — port 8000)
+
+```bash
+cd ai_service
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Or use the helper script:
+
+```bash
+cd ai_service
+python run.py
+```
+
+---
+
+## Production build
+
+```bash
+# Build the frontend
+npm run build
+
+# Preview the production build
+npm run preview
+```
+
+---
+
+## Environment variables
+
+Copy `.env.example` to `.env` and fill in your values:
+
+```env
+# Backend
+PORT=4000
+MONGODB_URI=mongodb://127.0.0.1:27017
+MONGODB_DB_NAME=SIH26134
+JWT_SECRET=replace-with-a-long-random-secret
+JWT_EXPIRES_IN=2h
+
+# Python AI service (called by the backend)
+AI_SERVICE_URL=http://localhost:8000
+AI_SERVICE_TIMEOUT_MS=30000
+AI_SERVICE_API_KEY=
+
+# AI service process settings
+AI_SERVICE_PORT=8000
+AI_SERVICE_LOG_LEVEL=info
+AI_SERVICE_RELOAD=true
+```
+
+> **Important:** Change `JWT_SECRET` to a long random string before deploying.
+
+---
+
+## Verification tests
+
+Run these after both servers are up:
+
+```bash
+# Profile APIs (B3)
+node tests/verify-b3.mjs
+
+# Skill Knowledge Base (B4)
+node tests/verify-b4.mjs
+
+# Industry & Job APIs (B5)
+node tests/verify-b5.mjs
+
+# Training Provider & Curriculum (B6)
+node tests/verify-b6.mjs
+
+# Document Processing / AI Service (B7) — requires Python AI service on :8000
+node tests/verify-b7.mjs
+
+# Skill Normalization & Matching (B9)
+node tests/verify-b9.mjs
+
+# Recommendation Engine (B11)
+node tests/verify-b11.mjs
+
+# B12–B18 smoke test
+node tests/smoke-b12-b18.mjs
+```
+
+---
 
 ## Project structure
 
-- `frontend/` - React + Vite application, routes, components, charts, and styles
-- `backend/` - Node.js + Express REST API
-- `vite.config.js` - Vite frontend root and `/api` development proxy
+```
+SIH26134/
+├── backend/
+│   ├── app.js               Express app factory
+│   ├── server.js            Entry point
+│   ├── db.js                MongoDB client + schema init
+│   ├── config/env.js        Typed environment config
+│   ├── middleware/
+│   │   ├── auth.js          JWT verification + role guard
+│   │   └── errorHandler.js
+│   ├── routes/
+│   │   ├── auth.js          Register / login / logout
+│   │   ├── profiles.js      Role-specific profiles (B3)
+│   │   ├── skills.js        Skill knowledge base (B4)
+│   │   ├── industry.js      Industry management (B5)
+│   │   ├── jobs.js          Job roles + descriptions (B5)
+│   │   ├── training.js      Providers / programs / curricula (B6)
+│   │   ├── process.js       Document AI processing (B7)
+│   │   ├── normalize.js     Skill normalization (B9)
+│   │   ├── match.js         Skill matching + gap analysis (B9)
+│   │   ├── studentReadiness.js  Learner readiness (B10)
+│   │   ├── recommendations.js   Recommendation engine (B11)
+│   │   ├── roadmap.js       Learning roadmaps (B12)
+│   │   ├── alignment.js     Curriculum alignment (B13)
+│   │   ├── demand.js        Industry demand & trends (B14)
+│   │   ├── govIntelligence.js  Government intelligence (B15)
+│   │   ├── assessments.js   Assessments & feedback (B16)
+│   │   ├── reportsNotifications.js  Reports + notifications (B17)
+│   │   └── api.js           Legacy overview / health
+│   └── services/
+│       ├── aiService.js     HTTP client to Python AI
+│       ├── normalization.js Normalization engine
+│       ├── matcher.js       Skill matching engine
+│       └── recommender.js   Recommendation scoring
+│
+├── frontend/
+│   ├── main.jsx             React root + routing
+│   ├── App.jsx              Program lead dashboard
+│   ├── api.js               Axios client + all API functions
+│   ├── routePermissions.js  Role → route mapping
+│   └── components/
+│       ├── AuthGate.jsx          Login / register
+│       ├── StudentDashboard.jsx  Learner workspace
+│       ├── IndustryDashboard.jsx Industry workspace
+│       ├── TrainingDashboard.jsx Training provider workspace
+│       ├── GovernmentDashboard.jsx Government workspace
+│       ├── AIIntelligence.jsx    AI pipeline viewer
+│       ├── AnalyticsDashboard.jsx Cross-ecosystem analytics
+│       ├── ReportsCenter.jsx     Reports + notifications
+│       ├── RecommendationDashboard.jsx  Course recommendations
+│       ├── SkillMatchingDashboard.jsx   Normalization + matching
+│       ├── SignalForm.jsx        Demand signal form
+│       └── DemandChart.jsx      Recharts bar chart
+│
+├── ai_service/
+│   ├── main.py              FastAPI AI service
+│   ├── run.py               Convenience launcher
+│   ├── requirements.txt     fastapi uvicorn pydantic
+│   └── README.md
+│
+├── tests/
+│   ├── verify-b3.mjs  through  smoke-b12-b18.mjs
+│
+├── .env.example
+├── package.json
+└── vite.config.js
+```
 
-## MongoDB
+---
 
-The backend connects to MongoDB before opening port `4000`. Configure `MONGODB_URI` and `MONGODB_DB_NAME` in a local `.env` file using `.env.example` as a template. The connection is verified with a `ping` command and reported by `GET /api/health`.
+## User roles
 
-## Authentication API
+| Role | Route | What they see |
+|------|-------|---------------|
+| `learner` | `/student` | Skill gaps, readiness score, roadmap, recommendations |
+| `training` | `/training` | Programs, curriculum alignment, improvement suggestions |
+| `industry` | `/industry` | Job roles, demand signals, skill shortages |
+| `government` | `/government` | Regional gaps, supply vs demand, ecosystem overview |
 
-- `POST /api/auth/register` - create a role-scoped account
-- `POST /api/auth/login` - issue a JWT access token
-- `GET /api/auth/me` - return the authenticated current user
-- `POST /api/auth/logout` - invalidate the current token session
+All four roles share `/analytics`, `/reports`, and `/intelligence` (the AI layer).
 
-Send protected requests with `Authorization: Bearer <token>`. Passwords are stored as bcrypt hashes; JWT secrets must be supplied through `JWT_SECRET` outside local development.
+---
 
-## Product direction
+## API base URL
 
-The interface is organized around one continuous loop:
+All API endpoints are under `http://localhost:4000/api`.  
+The Vite dev server proxies `/api` to `:4000` automatically — no CORS config needed in development.
 
-1. Industry publishes demand.
-2. AI normalizes skills.
-3. Training providers align curricula.
-4. Learners close prioritized gaps.
-5. Assessments refresh real skill levels.
-6. Government acts on aggregated regional intelligence.
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:4000/api |
+| API health | http://localhost:4000/api/health |
+| AI service | http://localhost:8000 |
+| AI health | http://localhost:8000/health |

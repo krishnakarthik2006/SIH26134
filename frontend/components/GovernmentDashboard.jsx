@@ -7,6 +7,7 @@ import {
   Plus, RefreshCw, Search, Settings2, ShieldCheck, Sparkles, TrendingUp, Users, X,
 } from 'lucide-react'
 import './government.css'
+import { toast } from '../lib/toast.js'
 import {
   getGovernmentOverview, getRegionalGaps, getSupplyDemand, getEmergingSkills,
   getUnderservedAreas, generateReport2, getMyReports, createNotification,
@@ -101,7 +102,8 @@ export default function GovernmentDashboard() {
       const r = await getMyReports({ limit: 4 })
       setReports(r.reports || [])
       setReportOpen(false)
-    } catch { setError('Could not generate report.') }
+      toast.success('State intelligence report generated')
+    } catch { toast.error('Could not generate report.') }
     finally { setGeneratingReport(false) }
   }
 
@@ -109,7 +111,8 @@ export default function GovernmentDashboard() {
     try {
       await createNotification({ recipientRole: 'training', title: `New organization: ${values.name}`, text: `${values.type} organization invited to the ecosystem.`, severity: 'info' })
       reset(); setShowOrg(false)
-    } catch { setError('Could not send invitation.') }
+      toast.success(`Invitation sent to ${values.name}`)
+    } catch { toast.error('Could not send invitation.') }
   }
 
   return (

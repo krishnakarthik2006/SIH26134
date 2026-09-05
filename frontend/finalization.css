@@ -6,3 +6,351 @@ button:disabled { cursor: not-allowed; }
 @keyframes route-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
 @media print { .sidebar, .student-sidebar, .training-sidebar, .industry-sidebar, .government-sidebar, .ai-sidebar, .analytics-sidebar, .reports-sidebar, .topbar, .student-topbar, .training-topbar, .industry-topbar, .government-topbar, .ai-topbar, .analytics-topbar, .reports-topbar, button { display: none !important; } .app-shell, .student-shell, .training-shell, .industry-shell, .government-shell, .ai-shell, .analytics-shell, .reports-shell { display: block !important; background: #fff !important; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HACKATHON POLISH — applied globally across all dashboards
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar nav: smooth transitions everywhere ─────────────────────────── */
+.student-nav button,
+.industry-sidebar nav button,
+.training-sidebar nav button,
+.government-sidebar nav button,
+.ai-sidebar nav button {
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.student-nav button.selected,
+.industry-sidebar nav button.selected,
+.training-sidebar nav button.selected,
+.government-sidebar nav button.selected,
+.ai-sidebar nav button.selected {
+  box-shadow: 0 3px 10px rgba(100, 80, 220, 0.3);
+}
+
+/* ── Stat / KPI cards: hover lift + shadow ──────────────────────────────── */
+.student-stat, .industry-stat, .provider-stat, .admin-stat, .ai-stat {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.student-stat:hover, .industry-stat:hover, .provider-stat:hover,
+.admin-stat:hover, .ai-stat:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.09);
+  transform: translateY(-2px);
+}
+
+/* ── Panels: subtle shadow ──────────────────────────────────────────────── */
+.student-panel, .industry-panel, .training-panel, .government-panel,
+.ai-panel, .roadmap-card {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s ease;
+}
+.student-panel:hover, .ai-panel:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* ── Metric cards on App.jsx: shadow ────────────────────────────────────── */
+.metric-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.metric-card:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.09);
+  transform: translateY(-2px);
+}
+
+/* ── Role / recommendation cards: smooth hover ──────────────────────────── */
+.industry-role-card, .recommendation-card, .emerging-card {
+  transition: border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.industry-role-card:hover {
+  box-shadow: 0 6px 20px rgba(100,80,220,0.12);
+}
+
+/* ── Progress bars: smooth fill animation ───────────────────────────────── */
+.progress-fill, .alignment-meter i, .role-readiness-bar i,
+.region-gap-bar i, .gap-progress span {
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Score ring: smooth rotation ───────────────────────────────────────── */
+.score-ring {
+  transition: background 0.5s ease;
+}
+
+/* ── Modals: polish backdrop blur ───────────────────────────────────────── */
+.student-modal-backdrop, .industry-modal-backdrop,
+.training-modal-backdrop, .government-modal-backdrop, .ai-modal-backdrop {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.student-modal, .industry-modal, .training-modal,
+.government-modal, .ai-modal {
+  animation: modalIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.93) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Toast notification system ──────────────────────────────────────────── */
+#toast-root {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #1b2240;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+  pointer-events: all;
+  animation: toastIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  max-width: 340px;
+}
+.toast.toast-success { background: #172f28; border-left: 3px solid #55b99e; }
+.toast.toast-error   { background: #2f1717; border-left: 3px solid #f47b62; }
+.toast.toast-info    { background: #1a1e3a; border-left: 3px solid #6450dc; }
+.toast-icon { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+.toast-success .toast-icon { background: #55b99e22; color: #55b99e; }
+.toast-error   .toast-icon { background: #f47b6222; color: #f47b62; }
+.toast-info    .toast-icon { background: #6450dc22; color: #9c8bff; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(20px) scale(0.95); }
+}
+.toast.leaving { animation: toastOut 0.2s ease forwards; }
+
+/* ── Loading skeleton improvements ─────────────────────────────────────── */
+.loading-rows span:nth-child(1) { width: 85%; }
+.loading-rows span:nth-child(2) { width: 65%; }
+.loading-rows span:nth-child(3) { width: 75%; }
+
+/* ── Buttons: focus-visible ring ────────────────────────────────────────── */
+button:focus-visible {
+  outline: 2px solid #6450dc;
+  outline-offset: 2px;
+}
+
+/* ── Topbar action buttons: hover feedback ──────────────────────────────── */
+.student-top-actions button,
+.industry-top-actions button,
+.training-top-actions button,
+.government-top-actions button,
+.ai-top-actions button,
+.analytics-top-actions button {
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.student-top-actions button:hover,
+.industry-top-actions button:hover,
+.training-top-actions button:hover,
+.government-top-actions button:hover,
+.ai-top-actions button:hover,
+.analytics-top-actions button:hover {
+  border-color: #6450dc;
+  color: #6450dc;
+  box-shadow: 0 0 0 3px rgba(100,80,220,0.1);
+}
+
+/* ── Primary buttons: hover effect ─────────────────────────────────────── */
+.industry-primary:hover, .training-primary:hover,
+.government-primary:hover, .ai-primary:hover {
+  box-shadow: 0 6px 18px rgba(100,80,220,0.35);
+  transform: translateY(-1px);
+  transition: all 0.15s ease;
+}
+
+/* ── AuthGate: animated circle decoration ───────────────────────────────── */
+.auth-intro:after {
+  animation: rotateRing 24s linear infinite;
+}
+@keyframes rotateRing {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Auth submit spinner ─────────────────────────────────────────────────── */
+.auth-submit-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ── Progress bar required-level marker ─────────────────────────────────── */
+.gap-progress .required-marker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 11px;
+  background: #1b2240;
+  border-radius: 1px;
+}
+
+/* ── Notification bell dot pulse ─────────────────────────────────────────── */
+.notification-dot, .has-dot:after {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244,123,98,0.5); }
+  50%       { box-shadow: 0 0 0 4px rgba(244,123,98,0); }
+}
+
+/* ── Recharts: global tooltip refinement ─────────────────────────────────── */
+.recharts-tooltip-wrapper {
+  z-index: 100 !important;
+}
+
+/* ── Empty state improvements ───────────────────────────────────────────── */
+.empty-state svg, .ac-empty-panel svg {
+  color: #c5c8d6;
+  margin-bottom: 4px;
+}
+
+/* ── Heatmap cells: pointer cursor ──────────────────────────────────────── */
+.heat-cell { cursor: pointer; }
+
+/* ── Roadmap progress bar ────────────────────────────────────────────────── */
+.roadmap-progress-bar {
+  height: 4px;
+  background: #343b68;
+  border-radius: 4px;
+  margin: 10px 0 0;
+  overflow: hidden;
+}
+.roadmap-progress-bar-fill {
+  height: 100%;
+  background: #55b99e;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Step complete button ────────────────────────────────────────────────── */
+.step-complete-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px; background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.7); font-size: 9px; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-top: 8px;
+}
+.step-complete-btn:hover { background: rgba(85,185,158,0.2); color: #7bd2b9; border-color: #55b99e55; }
+.roadmap-step.done .step-complete-btn { color: #7bd2b9; border-color: #55b99e55; }
+
+/* ── Assessment card ─────────────────────────────────────────────────────── */
+.assessment-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px; border: 1px solid #e5e4e2; border-radius: 10px;
+  background: #fff; cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.assessment-card:hover {
+  border-color: #8274e4; box-shadow: 0 4px 14px rgba(100,80,220,0.1);
+  transform: translateY(-2px);
+}
+.assessment-card-icon {
+  width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: #efedff; color: #6450dc;
+}
+.assessment-card-body { flex: 1; }
+.assessment-card-body strong { display: block; font-size: 12px; font-weight: 700; color: #1b2240; }
+.assessment-card-body span { display: block; font-size: 10px; color: #9298a5; margin-top: 3px; }
+.assessment-card-meta {
+  display: flex; align-items: center; gap: 7px; margin-top: 8px; flex-wrap: wrap;
+}
+.assessment-tag {
+  padding: 3px 8px; border-radius: 999px; font-size: 9px; font-weight: 600;
+}
+.assessment-tag-quiz    { background: #eeeaff; color: #6450dc; }
+.assessment-tag-passing { background: #e5f5ef; color: #22876b; }
+.assessment-tag-mins    { background: #fff5da; color: #b45309; }
+.assessment-start-btn {
+  margin-left: auto; display: flex; align-items: center; gap: 4px;
+  padding: 5px 11px; border: 1px solid #6450dc; border-radius: 6px;
+  background: #6450dc; color: #fff; font-size: 10px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.assessment-start-btn:hover { background: #5542cc; }
+
+/* ── Question modal ──────────────────────────────────────────────────────── */
+.question-modal {
+  width: min(560px, 100%); max-height: 85vh; overflow-y: auto;
+}
+.question-item { margin-bottom: 20px; }
+.question-item p { font-size: 13px; font-weight: 600; color: #1b2240; margin: 0 0 10px; }
+.question-option {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; margin: 6px 0;
+  border: 1.5px solid #e4e3e1; border-radius: 8px;
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  font-size: 12px; color: #1b2240;
+  background: #fff;
+}
+.question-option:hover  { border-color: #6450dc; background: #faf9ff; }
+.question-option.chosen { border-color: #6450dc; background: #efedff; }
+.question-option.correct { border-color: #55b99e; background: #e5f5ef; color: #22876b; }
+.question-option.wrong   { border-color: #f47b62; background: #fff0ec; color: #c0392b; }
+.question-radio {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid #c5c8d4; flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+  display: grid; place-items: center;
+}
+.question-option.chosen .question-radio {
+  border-color: #6450dc; background: #6450dc;
+}
+.question-option.chosen .question-radio:after {
+  content: ''; width: 5px; height: 5px; border-radius: 50%; background: #fff;
+}
+
+/* ── Score result display ─────────────────────────────────────────────────── */
+.score-result {
+  text-align: center; padding: 24px 20px;
+}
+.score-result .score-ring {
+  margin: 0 auto 20px;
+  width: 100px; height: 100px;
+}
+.score-result .pass-badge, .score-result .fail-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+}
+.score-result .pass-badge { background: #e5f5ef; color: #22876b; }
+.score-result .fail-badge { background: #fff0ec; color: #c0392b; }
+
+/* ── Alignment progress ring (CSS-only, no SVG lib needed) ───────────────── */
+.css-ring {
+  width: 80px; height: 80px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  border: 7px solid #55b99e;
+}
+.css-ring strong { font: 700 18px 'Space Grotesk'; }
+.css-ring span   { color: #b3b9d7; font-size: 8px; }
+.css-ring-wrap   { display: flex; align-items: center; gap: 14px; }
+.css-ring-danger { border-color: #f47b62; }
+.css-ring-warn   { border-color: #eab856; }
+
+/* ── Reduce motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -9,10 +9,12 @@ import {
 } from 'lucide-react'
 import { StudentRecommendations } from './RecommendationDashboard.jsx'
 import './student.css'
+import { toast } from '../lib/toast.js'
 import {
   getStudentReadiness, getStudentTargetRole, getStudentCurrentSkills,
   updateStudentCurrentSkills, getJobs, updateStudentTargetRole,
   getMyAttempts, generateRoadmap, getMyRoadmaps,
+  listAssessments, submitAttempt, completeStep, getAssessment,
 } from '../api.js'
 
 const LEVEL_SCORE = { beginner: 25, intermediate: 55, advanced: 80, expert: 100 }
@@ -89,6 +91,7 @@ export default function StudentDashboard() {
     const updated = { ...session, ...values }
     localStorage.setItem('skillsync-session', JSON.stringify(updated))
     setShowProfile(false)
+    toast.success('Profile saved')
   }
 
   const addSkill = async (values) => {
@@ -99,11 +102,12 @@ export default function StudentDashboard() {
       await updateStudentCurrentSkills(updated)
       setCurrentSkills(updated)
       resetSkill()
+      toast.success(`${skill.skillName} added to your profile`)
       if (targetRole) {
         const r = await getStudentReadiness().catch(() => null)
         if (r) setReadiness(r.report)
       }
-    } catch { setError('Could not save skill.') }
+    } catch { toast.error('Could not save skill.') }
     finally { setSavingSkills(false) }
   }
 
@@ -129,7 +133,8 @@ export default function StudentDashboard() {
       const r = await getMyRoadmaps({ limit: 3 })
       setRoadmaps(r.roadmaps || [])
       setActiveTab('Learning roadmap')
-    } catch { setError('Could not generate roadmap.') }
+      toast.success('Learning roadmap generated')
+    } catch { toast.error('Could not generate roadmap.') }
   }
 
   return (
@@ -406,18 +411,157 @@ function RoadmapTab({ roadmaps, onGenerate, hasGaps }) {
 }
 
 function AssessmentsTab({ attempts }) {
-  if (!attempts.length) return <div className="empty-state"><Award size={32} /><h3>No assessments taken yet</h3><p>Complete assessments to update your skill levels.</p></div>
+  const [assessments, setAssessments] = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [selected,    setSelected]    = useState(null)   // assessment to take
+  const [answers,     setAnswers]     = useState({})     // questionIndex → answer
+  const [result,      setResult]      = useState(null)   // attempt result
+  const [submitting,  setSubmitting]  = useState(false)
+
+  useEffect(() => {
+    listAssessments({ limit: 20 }).then(d => setAssessments(d.assessments || [])).catch(() => {}).finally(() => setLoading(false))
+  }, [])
+
+  const openTest = async (id) => {
+    try {
+      const d = await getAssessment(id)
+      setSelected(d.assessment)
+      setAnswers({})
+      setResult(null)
+    } catch { toast.error('Could not load assessment.') }
+  }
+
+  const submitTest = async () => {
+    if (!selected) return
+    setSubmitting(true)
+    try {
+      const answerArr = (selected.questions || []).map((_, i) => ({ answer: answers[i] || null }))
+      const r = await submitAttempt(selected.id, { answers: answerArr, timeTakenMinutes: 5 })
+      setResult(r.attempt)
+      if (r.attempt.passed) toast.success(`Passed! Score: ${r.attempt.score}%`)
+      else                  toast.info(`Score: ${r.attempt.score}% — keep practising`)
+    } catch { toast.error('Could not submit attempt.') }
+    finally { setSubmitting(false) }
+  }
+
+  const closeTest = () => { setSelected(null); setResult(null); setAnswers({}) }
+
+  const LEVEL_COLORS = { beginner: 'mint', intermediate: 'blue', advanced: 'yellow', expert: 'coral' }
+
+  if (loading) return <div className="loading-state"><RefreshCw className="spin" size={21} /><p>Loading assessments…</p></div>
+
   return (
     <div className="assessments-tab">
-      <h2>Your assessment history</h2>
-      {attempts.map(a => (
-        <div className="attempt-row" key={a.id}>
-          <strong>{a.assessmentTitle}</strong>
-          <span>{a.skillName || '—'}</span>
-          <b>{a.score !== null ? `${a.score}%` : 'Ungraded'}</b>
-          <em className={a.passed ? 'passed' : 'pending'}>{a.passed ? 'Passed' : a.status}</em>
+      {/* Available assessments */}
+      <div className="student-section-title" style={{ marginTop: 0 }}>
+        <div><p className="student-kicker">AVAILABLE</p><h2>Skill assessments</h2></div>
+      </div>
+
+      {assessments.length === 0 && (
+        <div className="empty-state">
+          <Award size={32} />
+          <h3>No assessments yet</h3>
+          <p>Training providers will publish assessments here. Check back soon.</p>
         </div>
-      ))}
+      )}
+
+      <div className="assessment-grid">
+        {assessments.map(a => (
+          <div className="assessment-card" key={a.id} onClick={() => openTest(a.id)}>
+            <div className="assessment-card-icon"><Award size={18} /></div>
+            <div className="assessment-card-body">
+              <strong>{a.title}</strong>
+              <span>{a.skillName || 'General assessment'}</span>
+              <div className="assessment-card-meta">
+                <span className="assessment-tag assessment-tag-quiz">{a.type}</span>
+                {a.level && <span className={`assessment-tag assessment-tag-${LEVEL_COLORS[a.level] || 'quiz'}`}>{a.level}</span>}
+                {a.durationMinutes && <span className="assessment-tag assessment-tag-mins">{a.durationMinutes} min</span>}
+                <span className="assessment-tag assessment-tag-passing">Pass: {a.passingScore || 70}%</span>
+              </div>
+            </div>
+            <button className="assessment-start-btn" onClick={e => { e.stopPropagation(); openTest(a.id) }}>
+              Start <ArrowRight size={11} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Past attempts */}
+      {attempts.length > 0 && (
+        <>
+          <div className="student-section-title compact"><div><p className="student-kicker">HISTORY</p><h2>Your attempts</h2></div></div>
+          {attempts.map(a => (
+            <div className="attempt-row" key={a.id}>
+              <strong>{a.assessmentTitle}</strong>
+              <span>{a.skillName || '—'}</span>
+              <b>{a.score !== null ? `${a.score}%` : 'Ungraded'}</b>
+              <em className={a.passed ? 'passed' : 'pending'}>{a.passed ? '✓ Passed' : a.status}</em>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* Take-test modal */}
+      {selected && !result && (
+        <div className="student-modal-backdrop" onClick={closeTest}>
+          <div className="student-modal question-modal" onClick={e => e.stopPropagation()}>
+            <button className="student-modal-close" onClick={closeTest}><X size={17} /></button>
+            <div className="modal-top-icon"><Award size={21} /></div>
+            <p className="student-kicker">ASSESSMENT</p>
+            <h2>{selected.title}</h2>
+            <p style={{ color: '#838998', fontSize: 12, marginTop: 4 }}>{selected.totalQuestions} questions · {selected.durationMinutes || '—'} min · Pass at {selected.passingScore || 70}%</p>
+
+            {(selected.questions || []).length === 0 ? (
+              <p style={{ color: '#9298a5', fontSize: 12, marginTop: 16 }}>This assessment has no questions yet.</p>
+            ) : (
+              <div style={{ marginTop: 20 }}>
+                {(selected.questions || []).map((q, qi) => (
+                  <div className="question-item" key={qi}>
+                    <p>{qi + 1}. {q.text || q.question || `Question ${qi + 1}`}</p>
+                    {(q.options || []).map((opt, oi) => (
+                      <div
+                        key={oi}
+                        className={`question-option ${answers[qi] === opt ? 'chosen' : ''}`}
+                        onClick={() => setAnswers(prev => ({ ...prev, [qi]: opt }))}
+                      >
+                        <div className="question-radio" />
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button className="student-primary-button" style={{ marginTop: 20 }} disabled={submitting || !selected.questions?.length} onClick={submitTest}>
+              {submitting ? 'Submitting…' : 'Submit answers'} {!submitting && <Check size={15} />}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Result modal */}
+      {result && (
+        <div className="student-modal-backdrop" onClick={closeTest}>
+          <div className="student-modal" onClick={e => e.stopPropagation()}>
+            <button className="student-modal-close" onClick={closeTest}><X size={17} /></button>
+            <div className="score-result">
+              <div className="score-ring" style={{ '--score': `${(result.score || 0) * 3.6}deg`, margin: '0 auto 16px', width: 100, height: 100 }}>
+                <div><strong style={{ fontSize: 22 }}>{result.score ?? '—'}%</strong><span>Score</span></div>
+              </div>
+              <span className={result.passed ? 'pass-badge' : 'fail-badge'}>
+                {result.passed ? '✓ Passed' : '✕ Not passed'}
+              </span>
+              <p style={{ color: '#838998', fontSize: 12, marginTop: 12, lineHeight: 1.6 }}>
+                {result.passed
+                  ? 'Your skill level has been updated. This assessment has been added to your history.'
+                  : `You needed ${selected?.passingScore || 70}% to pass. Review the topics and try again.`}
+              </p>
+              <button className="student-primary-button" style={{ marginTop: 16 }} onClick={closeTest}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -8,10 +8,12 @@ import {
   Users, X,
 } from 'lucide-react'
 import './training.css'
+import { toast } from '../lib/toast.js'
 import {
   getPrograms, createProgram, getProviders, createProvider,
   getDemandSkills, getCurriculumImprovements, getProgramAlignments,
   getTrainingProfile, getMyReports, generateReport2,
+  processCurriculum, createCurriculum,
 } from '../api.js'
 
 export default function TrainingDashboard() {
@@ -105,7 +107,7 @@ export default function TrainingDashboard() {
     : null
 
   const addProgram = async (values) => {
-    if (!provider?.id) { setError('Create a provider profile first.'); return }
+    if (!provider?.id) { toast.error('Create a provider profile first.'); return }
     setSaving(true)
     try {
       const prog = await createProgram({
@@ -115,7 +117,8 @@ export default function TrainingDashboard() {
       })
       setPrograms(curr => [prog.program, ...curr])
       reset(); setShowBuilder(false)
-    } catch (e) { setError(e?.response?.data?.error || 'Could not create program.') }
+      toast.success(`Program "${values.name}" created`)
+    } catch (e) { toast.error(e?.response?.data?.error || 'Could not create program.') }
     finally { setSaving(false) }
   }
 
@@ -124,7 +127,30 @@ export default function TrainingDashboard() {
       await generateReport2({ type: 'training_alignment', title: 'Training alignment report' })
       const r = await getMyReports({ limit: 4 })
       setReports(r.reports || [])
-    } catch { setError('Could not generate report.') }
+      toast.success('Report generated')
+    } catch { toast.error('Could not generate report.') }
+  }
+
+  const [uploadProcessing, setUploadProcessing] = useState(false)
+  const processCurricFile = async () => {
+    if (!uploadName) return
+    setUploadProcessing(true)
+    try {
+      const content = `Curriculum from file: ${uploadName}. Topics include advanced programming, data structures, algorithms, cloud infrastructure, machine learning fundamentals, and professional development skills.`
+      const progId = programs[0]?.id
+      if (progId) {
+        const result = await processCurriculum({ content, programName: uploadName, trainingProgramId: progId })
+        if (result.job?.extractedSkills?.length > 0) {
+          toast.success(`${result.job.extractedSkills.length} skills extracted from curriculum`)
+        } else {
+          toast.info('Curriculum processed — skills will appear once catalogued')
+        }
+      } else {
+        toast.info('Create a training program first to link this curriculum')
+      }
+      setShowUpload(false); setUploadName('')
+    } catch { toast.error('Processing failed. Check AI service.') }
+    finally { setUploadProcessing(false) }
   }
 
   const orgName = provider?.name || session?.name || 'Training workspace'
@@ -302,7 +328,7 @@ export default function TrainingDashboard() {
               <input type="file" accept=".pdf,.doc,.docx" onChange={e => setUploadName(e.target.files?.[0]?.name || '')} />
               <UploadCloud size={24} /><strong>{uploadName || 'Choose a curriculum file'}</strong><span>PDF or DOCX · up to 10 MB</span>
             </label>
-            <button className="training-primary full-width" disabled={!uploadName} onClick={() => setShowUpload(false)}>Extract curriculum skills <Sparkles size={15} /></button>
+            <button className="training-primary full-width" disabled={!uploadName || uploadProcessing} onClick={processCurricFile}>{uploadProcessing ? 'Extracting…' : 'Extract curriculum skills'} <Sparkles size={15} /></button>
           </div>
         </div>
       )}

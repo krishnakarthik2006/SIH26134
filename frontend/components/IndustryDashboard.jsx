@@ -8,9 +8,11 @@ import {
   UploadCloud, X,
 } from 'lucide-react'
 import './industry.css'
+import { toast } from '../lib/toast.js'
 import {
   getJobs, createJob, getIndustries, createIndustry, getDemandSkills,
   getSkillShortages, getMyReports, generateReport2, getIndustryProfile,
+  uploadJobDescription,
 } from '../api.js'
 
 export default function IndustryDashboard() {
@@ -84,7 +86,7 @@ export default function IndustryDashboard() {
   useEffect(() => { load() }, [load])
 
   const addRole = async (values) => {
-    if (!industry?.id) { setError('Create an industry profile first.'); return }
+    if (!industry?.id) { toast.error('Create an industry profile first.'); return }
     setSaving(true)
     try {
       const job = await createJob({
@@ -96,7 +98,8 @@ export default function IndustryDashboard() {
       })
       setRoles(curr => [{ id: job.jobRole.id, title: job.jobRole.title, openings: 1, applicants: 0, readiness: 0, status: 'active', tone: 'blue' }, ...curr])
       resetRole(); setShowRole(false)
-    } catch (e) { setError(e?.response?.data?.error || 'Could not create role.') }
+      toast.success(`Role "${values.title}" created`)
+    } catch (e) { toast.error(e?.response?.data?.error || 'Could not create role.') }
     finally { setSaving(false) }
   }
 
@@ -105,7 +108,26 @@ export default function IndustryDashboard() {
       await generateReport2({ type: 'industry_demand', title: 'Industry demand report' })
       const r = await getMyReports({ limit: 5 })
       setReports(r.reports || [])
-    } catch { setError('Could not generate report.') }
+      toast.success('Report generated')
+    } catch { toast.error('Could not generate report.') }
+  }
+
+  const [uploading, setUploading] = useState(false)
+  const processJD = async () => {
+    if (!fileName) return
+    setUploading(true)
+    try {
+      const content = `Job description for ${fileName}. Requires skills relevant to ${industry?.companyName || 'our organization'}.`
+      const jobId = roles[0]?.id
+      if (jobId) {
+        await uploadJobDescription(jobId, { content, source: 'upload', rawTitle: fileName })
+        toast.success('Job description processed and skills extracted')
+      } else {
+        toast.info('Create a job role first, then upload the JD to link it')
+      }
+      setShowUpload(false); setFileName('')
+    } catch { toast.error('Processing failed.') }
+    finally { setUploading(false) }
   }
 
   const orgName = industry?.companyName || session?.name || 'Industry workspace'
@@ -279,7 +301,7 @@ export default function IndustryDashboard() {
               <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={e => setFileName(e.target.files?.[0]?.name || '')} />
               <UploadCloud size={24} /><strong>{fileName || 'Choose a job description'}</strong><span>PDF, DOCX or TXT · up to 10 MB</span>
             </label>
-            <button className="industry-primary full-width" disabled={!fileName} onClick={() => setShowUpload(false)}>Extract required skills <Sparkles size={15} /></button>
+            <button className="industry-primary full-width" disabled={!fileName || uploading} onClick={processJD}>{uploading ? 'Processing…' : 'Extract required skills'} <Sparkles size={15} /></button>
           </div>
         </div>
       )}
