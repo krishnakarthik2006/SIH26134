@@ -660,9 +660,6 @@ function AssessmentsTab({ attempts }) {
           </div>
         </div>
       )}
-
-      {/* Floating Ollama-powered AI Assistant */}
-      <AiChatAssistant context={{ targetRole: targetRole?.title, gaps: readiness?.topGaps, currentSkills }} />
     </div>
   )
 }

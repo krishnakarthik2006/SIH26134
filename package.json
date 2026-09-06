@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "seed": "node tests/seed-demo-data.mjs",
     "dev": "concurrently \"npm run server\" \"vite\"",
     "server": "nodemon --delay 1000ms --ignore 'frontend/' --ignore 'tests/' --ignore 'data/' backend/server.js",
     "client": "vite",

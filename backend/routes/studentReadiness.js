@@ -86,7 +86,7 @@ function validateCurrentSkills(currentSkills) {
     if (!skill.skillId && !skill.skillName && !skill.name) {
       throw bad(`currentSkills[${index}] must include skillId or skillName`)
     }
-    if (skill.skillId !== undefined && (typeof skill.skillId !== 'string' || !skill.skillId.trim())) {
+    if (skill.skillId !== undefined && skill.skillId !== null && skill.skillId !== '' && (typeof skill.skillId !== 'string' || !skill.skillId.trim())) {
       throw bad(`currentSkills[${index}].skillId must be a non-empty string`)
     }
     for (const field of ['skillName', 'name']) {
@@ -109,22 +109,30 @@ function validateCurrentSkills(currentSkills) {
 async function canonicalizeCurrentSkills(currentSkills) {
   validateCurrentSkills(currentSkills)
 
+  // Sanitize: treat empty/null skillId as absent
+  const sanitized = currentSkills.map(s => ({
+    ...s,
+    skillId: (s.skillId && s.skillId.trim()) ? s.skillId.trim() : undefined,
+  }))
+
   const db = getDatabase()
-  const ids = [...new Set(currentSkills.map(skill => skill.skillId).filter(Boolean))]
+  const ids = [...new Set(sanitized.map(skill => skill.skillId).filter(Boolean))]
   const docs = ids.length
     ? await db.collection('skills').find({ _id: { $in: ids }, isDeleted: { $ne: true } }).toArray()
     : []
   const skillsById = new Map(docs.map(skill => [skill._id, skill]))
 
-  if (docs.length !== ids.length) throw bad('One or more current skillIds do not exist')
+  // Only throw if a non-empty skillId doesn't resolve
+  const invalidIds = ids.filter(id => !skillsById.has(id))
+  if (invalidIds.length) throw bad('One or more current skillIds do not exist')
 
-  const nameOnly = currentSkills
+  const nameOnly = sanitized
     .map((skill, index) => ({ index, name: skill.skillName || skill.name || '' }))
-    .filter(item => !currentSkills[item.index].skillId && item.name.trim())
+    .filter(item => !sanitized[item.index].skillId && item.name.trim())
   const normalized = nameOnly.length ? await normalizeTerms(nameOnly.map(item => item.name.trim())) : []
   const normalizedByIndex = new Map(nameOnly.map((item, index) => [item.index, normalized[index]]))
 
-  return currentSkills.map((skill, index) => {
+  return sanitized.map((skill, index) => {
     const providedName = (skill.skillName || skill.name || '').trim()
     const canonical = skill.skillId
       ? skillsById.get(skill.skillId)

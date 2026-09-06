@@ -18,7 +18,33 @@ MongoDB must be running locally on the default port **27017** before you start t
 
 ---
 
-## Quick start (everything at once)
+## Demo accounts (pre-seeded)
+
+Run `node tests/seed-demo-data.mjs` once to create these accounts. Re-running is safe — it skips existing data.
+
+### Industry partner — TechCorp Solutions
+| Field | Value |
+|-------|-------|
+| Email | `abc@company.com` |
+| Password | `Company@123` |
+| Role | Industry partner |
+| Dashboard | http://localhost:5173/industry |
+| Pre-loaded | SDE job role with Java & C++ requirements + full job description |
+
+### Learner — Arjun Kulkarni
+| Field | Value |
+|-------|-------|
+| Email | `arjun@learner.com` |
+| Password | `Learner@123` |
+| Role | Learner |
+| Dashboard | http://localhost:5173/student |
+| Pre-loaded | Current skills: Python, JavaScript, DSA, Git · Target role: SDE · Readiness: 14% |
+
+The gap between Arjun's skills and the SDE requirements (Java, C++ missing) is intentional — it demonstrates the skill gap analysis, AI recommendations, and learning roadmap features immediately on login.
+
+---
+
+
 
 ```bash
 # 1. Install Node.js dependencies
