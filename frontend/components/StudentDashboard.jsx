@@ -395,12 +395,49 @@ function RoadmapTab({ roadmaps, onGenerate, hasGaps }) {
       {roadmaps.map(rm => (
         <div className="roadmap-card" key={rm.id}>
           <div className="roadmap-head"><div><h3>{rm.title}</h3><p>{rm.completedSteps}/{rm.totalSteps} steps · {rm.progressPct}% complete · status: {rm.status}</p></div></div>
-          <div className="roadmap-track">
+          <div className="roadmap-track" style={{ flexDirection: 'column', gap: '1rem' }}>
             {(rm.steps || []).map(step => (
-              <div className={`roadmap-step ${step.status === 'completed' ? 'done' : ''}`} key={step.stepId}>
-                <span>{step.status === 'completed' ? <Check size={14} /> : step.order}</span>
-                <strong>{step.skillName}</strong>
-                <small>{step.programName || step.status}</small>
+              <div className={`roadmap-step ${step.status === 'completed' ? 'done' : ''}`} key={step.stepId} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
+                  <span style={{ minWidth: '24px', height: '24px', borderRadius: '50%', background: step.status === 'completed' ? '#34d399' : '#7160e0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                    {step.status === 'completed' ? <Check size={14} /> : step.order}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ fontSize: '1rem', color: '#f8fafc' }}>{step.skillName}</strong>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{step.programName || `Target Level: ${step.requiredLevel || 'Intermediate'}`}</div>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '6px', background: step.status === 'completed' ? 'rgba(52,211,153,0.2)' : 'rgba(113,96,224,0.2)', color: step.status === 'completed' ? '#34d399' : '#a78bfa' }}>
+                    {step.status === 'completed' ? 'Completed' : 'Actionable'}
+                  </span>
+                </div>
+
+                {/* Multi-Source Resource Links for Step */}
+                {step.resources && step.resources.length > 0 && (
+                  <div style={{ marginTop: '0.75rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(255,255,255,0.06)', width: '100%' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Recommended Learning Resources:</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.3rem' }}>
+                      {step.resources.map((res, ri) => (
+                        <a
+                          key={ri}
+                          href={res.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            fontSize: '0.75rem',
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '10px',
+                            background: 'rgba(255,255,255,0.06)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            color: '#60a5fa',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          {res.type === 'youtube' ? '▶ YouTube' : res.type === 'certification' ? '📜 Free Cert' : res.type === 'documentation' ? '📘 Docs' : res.type === 'project' ? '💻 Project' : '🎓 Course'} · {res.title}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

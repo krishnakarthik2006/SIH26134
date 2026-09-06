@@ -12,7 +12,7 @@ import { toast } from '../lib/toast.js'
 import {
   getJobs, createJob, getIndustries, createIndustry, getDemandSkills,
   getSkillShortages, getMyReports, generateReport2, getIndustryProfile,
-  uploadJobDescription,
+  uploadJobDescription, getJobApplicants,
 } from '../api.js'
 
 export default function IndustryDashboard() {
@@ -31,6 +31,13 @@ export default function IndustryDashboard() {
   const [showUpload, setShowUpload] = useState(false)
   const [fileName, setFileName]     = useState('')
   const [saving, setSaving]         = useState(false)
+  const [uploading, setUploading]   = useState(false)
+
+  // Applicants modal state
+  const [selectedRole, setSelectedRole] = useState(null)
+  const [applicants, setApplicants]     = useState([])
+  const [loadingApp, setLoadingApp]     = useState(false)
+
 
   const { register: regRole, handleSubmit: hRole, reset: resetRole } = useForm()
 
@@ -112,7 +119,6 @@ export default function IndustryDashboard() {
     } catch { toast.error('Could not generate report.') }
   }
 
-  const [uploading, setUploading] = useState(false)
   const processJD = async () => {
     if (!fileName) return
     setUploading(true)
@@ -128,6 +134,19 @@ export default function IndustryDashboard() {
       setShowUpload(false); setFileName('')
     } catch { toast.error('Processing failed.') }
     finally { setUploading(false) }
+  }
+
+  const openApplicantModal = async (role) => {
+    setSelectedRole(role)
+    setLoadingApp(true)
+    try {
+      const res = await getJobApplicants(role.id)
+      setApplicants(res.applicants || [])
+    } catch {
+      setApplicants([])
+    } finally {
+      setLoadingApp(false)
+    }
   }
 
   const orgName = industry?.companyName || session?.name || 'Industry workspace'
@@ -246,6 +265,26 @@ export default function IndustryDashboard() {
                 </div>
                 <strong>{role.title}</strong>
                 <small className="role-card-meta">Live in platform</small>
+                <button
+                  onClick={() => openApplicantModal(role)}
+                  style={{
+                    marginTop: '0.6rem',
+                    background: 'rgba(113, 96, 224, 0.15)',
+                    border: '1px solid rgba(113, 96, 224, 0.3)',
+                    color: '#a78bfa',
+                    borderRadius: '8px',
+                    padding: '0.35rem 0.65rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.3rem',
+                  }}
+                >
+                  View Applicants & Skill Match <ArrowRight size={12} />
+                </button>
               </div>
             ))}
           </section>
@@ -302,6 +341,58 @@ export default function IndustryDashboard() {
               <UploadCloud size={24} /><strong>{fileName || 'Choose a job description'}</strong><span>PDF, DOCX or TXT · up to 10 MB</span>
             </label>
             <button className="industry-primary full-width" disabled={!fileName || uploading} onClick={processJD}>{uploading ? 'Processing…' : 'Extract required skills'} <Sparkles size={15} /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Applicants Modal */}
+      {selectedRole && (
+        <div className="industry-modal-backdrop" onClick={() => setSelectedRole(null)}>
+          <div className="industry-modal" style={{ maxWidth: '640px', width: '90%' }} onClick={e => e.stopPropagation()}>
+            <button className="industry-close" onClick={() => setSelectedRole(null)}><X size={17} /></button>
+            <div className="industry-modal-icon"><GitCompareArrows size={21} /></div>
+            <p className="industry-kicker">APPLICANT MATCH ANALYSIS</p>
+            <h2>Applicants for {selectedRole.title}</h2>
+            <p>AI-calculated skill match scores comparing candidate resumes with job requirements.</p>
+
+            {loadingApp && <p style={{ padding: '1rem', color: '#94a3b8' }}>Loading candidate profiles…</p>}
+
+            {!loadingApp && applicants.length === 0 && (
+              <div style={{ padding: '1.5rem 0', textAlign: 'center', color: '#94a3b8' }}>
+                No applications submitted for this position yet.
+              </div>
+            )}
+
+            {!loadingApp && applicants.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem', maxHeight: '350px', overflowY: 'auto' }}>
+                {applicants.map(app => (
+                  <div key={app.id} style={{ background: 'rgba(255,255,255,0.04)', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '0.95rem', color: '#f8fafc' }}>{app.applicantName}</strong>
+                        <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{app.applicantEmail}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: app.matchScore >= 70 ? '#34d399' : app.matchScore >= 40 ? '#fbbf24' : '#f87171' }}>
+                          {app.matchScore}%
+                        </span>
+                        <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Skill Match</div>
+                      </div>
+                    </div>
+                    {app.matchedSkills?.length > 0 && (
+                      <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#cbd5e1' }}>
+                        <strong>Matched Skills:</strong> {app.matchedSkills.join(', ')}
+                      </div>
+                    )}
+                    {app.missingSkills?.length > 0 && (
+                      <div style={{ marginTop: '0.2rem', fontSize: '0.75rem', color: '#f87171' }}>
+                        <strong>Missing Gaps:</strong> {app.missingSkills.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

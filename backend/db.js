@@ -11,6 +11,7 @@ export const domainCollections = [
   'industries',
   'job_roles',
   'job_descriptions',
+  'job_applications',
   'training_providers',
   'training_programs',
   'curriculums',
@@ -93,6 +94,14 @@ const indexes = {
     [{ source: 1 }],
     [{ isDeleted: 1 }],
     [{ uploadedBy: 1 }],
+  ],
+  job_applications: [
+    [{ applicantId: 1, jobRoleId: 1 }, { unique: true, sparse: true }],
+    [{ applicantId: 1, createdAt: -1 }],
+    [{ jobRoleId: 1, createdAt: -1 }],
+    [{ industryId: 1 }],
+    [{ status: 1 }],
+    [{ createdAt: -1 }],
   ],
   training_providers: [
     [{ name: 1 }, { unique: true, sparse: true }],

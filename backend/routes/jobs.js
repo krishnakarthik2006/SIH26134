@@ -262,7 +262,80 @@ router.post('/', requireRole('industry', 'government'), asyncHandler(async (req,
   }
 
   await getDatabase().collection('job_roles').insertOne(doc)
+
+  // Real-time demand aggregation: update skill_demand collection for each required skill
+  const db = getDatabase()
+  for (const s of validatedSkills) {
+    if (s.skillName) {
+      const norm = s.skillName.trim().toLowerCase()
+      await db.collection('skill_demand').updateOne(
+        { skillNameNormalized: norm },
+        {
+          $inc: { demandScore: s.requirement === 'required' ? 10 : 5, totalJobPostings: 1 },
+          $set: { skillName: s.skillName, updatedAt: new Date() },
+          $setOnInsert: { _id: randomUUID(), createdAt: new Date() },
+        },
+        { upsert: true }
+      ).catch(() => {})
+    }
+  }
+
   res.status(201).json({ jobRole: pub(doc) })
+}))
+
+/**
+ * GET /api/jobs/:id/applicants
+ * List applicants for a job role along with match/readiness scores.
+ */
+router.get('/:id/applicants', requireRole('industry', 'government'), asyncHandler(async (req, res) => {
+  const role = await findActiveRole(req.params.id)
+  const db = getDatabase()
+
+  const applications = await db.collection('job_applications')
+    .find({ jobRoleId: req.params.id, isDeleted: { $ne: true } })
+    .sort({ createdAt: -1 })
+    .toArray()
+
+  const applicantIds = applications.map(a => a.applicantId).filter(Boolean)
+
+  const students = applicantIds.length
+    ? await db.collection('students').find({ _id: { $in: applicantIds } }).toArray()
+    : []
+  const studentMap = new Map(students.map(s => [s._id, s]))
+
+  const users = students.map(s => s.userId).filter(Boolean)
+  const userDocs = users.length
+    ? await db.collection('users').find({ _id: { $in: users } }).toArray()
+    : []
+  const userMap = new Map(userDocs.map(u => [u._id, u]))
+
+  const results = applications.map(app => {
+    const student = studentMap.get(app.applicantId)
+    const user = student ? userMap.get(student.userId) : null
+
+    // Compute basic skill match score against job's required skills
+    const candidateSkills = (student?.currentSkills || []).map(s => (s.skillName || s.name || '').toLowerCase())
+    const requiredSkills = (role.requiredSkills || []).map(s => (s.skillName || s.name || '').toLowerCase())
+    const matched = requiredSkills.filter(s => candidateSkills.includes(s))
+    const matchScore = requiredSkills.length > 0
+      ? Math.round((matched.length / requiredSkills.length) * 100)
+      : 75
+
+    return {
+      id: app._id,
+      applicantId: app.applicantId,
+      applicantName: user?.name || student?.name || 'Applicant',
+      applicantEmail: user?.email || student?.email || 'N/A',
+      status: app.status || 'applied',
+      appliedAt: app.createdAt,
+      matchScore,
+      matchedSkills: matched,
+      missingSkills: requiredSkills.filter(s => !candidateSkills.includes(s)),
+      currentSkills: student?.currentSkills || [],
+    }
+  })
+
+  res.json({ applicants: results, jobTitle: role.title })
 }))
 
 /**

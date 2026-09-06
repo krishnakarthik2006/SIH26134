@@ -49,6 +49,16 @@ function orderSteps(gaps, recommendations) {
       (g.skillName || '').toLowerCase() === (gap.skillName || '').toLowerCase()
     ))
 
+    const sName = gap.skillName || 'Skill'
+    const encoded = encodeURIComponent(sName)
+
+    const fallbackResources = [
+      { type: 'youtube', label: 'YouTube Tutorial', title: `${sName} Crash Course`, url: `https://www.youtube.com/results?search_query=${encoded}+tutorial` },
+      { type: 'documentation', label: 'Official Docs', title: `${sName} Reference`, url: `https://devdocs.io/#q=${encoded}` },
+      { type: 'project', label: 'Portfolio Project', title: `${sName} Open-Source Project`, url: `https://github.com/topics/${encoded.toLowerCase()}` },
+      { type: 'certification', label: 'Free Certification', title: `${sName} Skill Certification`, url: `https://www.freecodecamp.org/news/search/?query=${encoded}` },
+    ]
+
     return {
       stepId:         randomUUID(),
       order:          idx + 1,
@@ -62,6 +72,7 @@ function orderSteps(gaps, recommendations) {
       providerId:     rec?.providerId   || null,
       providerName:   rec?.providerName || null,
       relevanceScore: rec?.relevanceScore || 0,
+      resources:      rec?.resources || fallbackResources,
       status:         'pending',   // pending | in_progress | completed | skipped
       prerequisites:  [],          // filled in by dependency analysis below
       completedAt:    null,

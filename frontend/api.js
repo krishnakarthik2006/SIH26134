@@ -1045,5 +1045,13 @@ export async function healthCheckAll() {
   }))
 }
 
+/**
+ * List applicants for a specific job role with readiness & match score.
+ * @param {string} jobId
+ */
+export const getJobApplicants = (jobId) =>
+  api.get(`/jobs/${jobId}/applicants`).then(({ data }) => data)
+
 export default api
+
 

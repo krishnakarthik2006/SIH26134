@@ -407,6 +407,59 @@ function publicGap(gap) {
   }
 }
 
+
+/**
+ * Helper to generate multi-type learning resources (YouTube, Docs, Projects, Certifications, Courses)
+ * for missing skills to guarantee 100% actionable coverage for learners.
+ */
+export function buildMultiTypeResourcesForSkill(skillName) {
+  const s = skillName?.trim() || 'Software Skill'
+  const encoded = encodeURIComponent(s)
+  
+  return [
+    {
+      type: 'youtube',
+      label: 'YouTube Tutorial',
+      title: `${s} Crash Course for Beginners`,
+      url: `https://www.youtube.com/results?search_query=${encoded}+tutorial+full+course`,
+      isFree: true,
+      provider: 'YouTube Learning',
+    },
+    {
+      type: 'documentation',
+      label: 'Official Documentation',
+      title: `${s} Official Guide & Docs`,
+      url: `https://devdocs.io/#q=${encoded}`,
+      isFree: true,
+      provider: 'Official Docs',
+    },
+    {
+      type: 'project',
+      label: 'Hands-on Project',
+      title: `Build a Real-World ${s} Portfolio Project`,
+      url: `https://github.com/topics/${encoded.toLowerCase()}`,
+      isFree: true,
+      provider: 'GitHub Open Source',
+    },
+    {
+      type: 'certification',
+      label: 'Free Certification',
+      title: `${s} Professional Skill Badge`,
+      url: `https://www.freecodecamp.org/news/search/?query=${encoded}`,
+      isFree: true,
+      provider: 'freeCodeCamp / OpenCert',
+    },
+    {
+      type: 'course_free',
+      label: 'Free Online Course',
+      title: `Mastering ${s} - Interactive Track`,
+      url: `https://www.coursera.org/search?query=${encoded}&productDifficultyLevel=Beginner`,
+      isFree: true,
+      provider: 'Coursera / edX',
+    },
+  ]
+}
+
 export async function recommendForGaps(rawGaps, options = {}) {
   const {
     limit            = 10,
@@ -435,6 +488,10 @@ export async function recommendForGaps(rawGaps, options = {}) {
     const hasPreferred   = coveredGaps.some(g => g.requirement === 'preferred')
     const priority       = hasCriticalGap ? 'critical' : hasPreferred ? 'high' : 'medium'
 
+    // Attach multi-type resources for the primary skill
+    const primarySkill = coveredGaps[0]?.skillName || ep.program.name
+    const resources = buildMultiTypeResourcesForSkill(primarySkill)
+
     results.push({
       programId:      ep.program._id,
       programName:    ep.program.name,
@@ -455,6 +512,37 @@ export async function recommendForGaps(rawGaps, options = {}) {
       uncoveredCritical: uncoveredGaps.filter(g => g.requirement === 'required').map(publicGap),
       reasons,
       explanation,
+      resources,
+    })
+  }
+
+  // Synthesize multi-source resources for gaps that had no DB program coverage
+  const coveredGapNames = new Set(results.flatMap(r => r.coveredGaps.map(g => (g.skillName || '').toLowerCase())))
+  const uncoveredGapList = gaps.filter(g => !coveredGapNames.has((g.skillName || '').toLowerCase()))
+
+  for (const gap of uncoveredGapList) {
+    const sName = gap.skillName || 'Missing Skill'
+    const resources = buildMultiTypeResourcesForSkill(sName)
+    results.push({
+      programId:      `synthetic-${sName.toLowerCase().replace(/\s+/g, '-')}`,
+      programName:    `${sName} Self-Paced Learning Track`,
+      providerId:     'open-source',
+      providerName:   'Community Learning Hub',
+      deliveryMode:   'online',
+      durationWeeks:  2,
+      fees:           0,
+      certificationOffered: true,
+      language:       'English',
+      relevanceScore: gap.requirement === 'required' ? 95 : 75,
+      priority:       gap.requirement === 'required' ? 'critical' : 'high',
+      scores:         { gapCoverage: 1.0, demandWeight: 0.8, levelFit: 0.9, providerQuality: 0.8, freshness: 1.0 },
+      coveredGaps:    [publicGap(gap)],
+      coveredGapCount: 1,
+      criticalCoveredCount: gap.requirement === 'required' ? 1 : 0,
+      uncoveredCritical: [],
+      reasons:        [{ type: 'critical_skill', label: 'Multi-Source Path', text: `Personalized multi-source path to master ${sName}.` }],
+      explanation:    `Access YouTube tutorials, official documentation, open-source projects, free courses, and certification guides for ${sName}.`,
+      resources,
     })
   }
 
@@ -472,3 +560,4 @@ export async function recommendForGaps(rawGaps, options = {}) {
 
   return results.slice(0, limit)
 }
+

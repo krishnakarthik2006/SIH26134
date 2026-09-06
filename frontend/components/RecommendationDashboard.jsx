@@ -42,11 +42,12 @@ function CourseCard({ rec }) {
     rec.deliveryMode,
     rec.durationWeeks ? `${rec.durationWeeks} weeks` : null,
     formatFees(rec.fees),
-    rec.certificationOffered ? 'Certificate' : null,
+    rec.certificationOffered ? 'Free Certificate' : null,
   ].filter(Boolean)
 
   const criticalChips = (rec.coveredGaps || []).filter(g => g.requirement === 'required')
   const otherChips    = (rec.coveredGaps || []).filter(g => g.requirement !== 'required')
+  const resources     = rec.resources || []
 
   return (
     <article className={`rec-course ${rec.priority || 'medium'}`}>
@@ -65,6 +66,42 @@ function CourseCard({ rec }) {
         {criticalChips.map(g => <span className="rec-chip coral" key={g.skillName}>Critical · {g.skillName}</span>)}
         {otherChips.map(g => <span className="rec-chip" key={g.skillName}>{g.skillName}</span>)}
       </div>
+      
+      {/* Multi-Type Learning Resources (YouTube, Certs, Docs, Projects) */}
+      {resources.length > 0 && (
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Recommended Multi-Source Learning Paths:
+          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.4rem' }}>
+            {resources.map((res, i) => (
+              <a
+                key={i}
+                href={res.url}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.75rem',
+                  padding: '0.25rem 0.6rem',
+                  borderRadius: '12px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#60a5fa',
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                }}
+              >
+                <span>{res.type === 'youtube' ? '▶ YouTube' : res.type === 'certification' ? '📜 Free Cert' : res.type === 'documentation' ? '📘 Docs' : res.type === 'project' ? '💻 Project' : '🎓 Course'}</span>
+                <span>· {res.title}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       <DimBars scores={rec.scores} />
       <button className="rec-explain-toggle" onClick={() => setOpen(v => !v)}>
         <Lightbulb size={13} /> {open ? 'Hide explanation' : 'Why this course?'}
