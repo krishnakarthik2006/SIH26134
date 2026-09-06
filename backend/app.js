@@ -12,8 +12,9 @@ import industryRouter        from './routes/industry.js'
 import jobsRouter            from './routes/jobs.js'
 // ─── Training ────────────────────────────────────────────────────────────────
 import trainingRouter        from './routes/training.js'
-// ─── AI Processing ───────────────────────────────────────────────────────────
+// ─── AI Processing & Chat ───────────────────────────────────────────────────
 import processRouter         from './routes/process.js'
+import aiChatRouter          from './routes/aiChat.js'
 // ─── Matching & Gaps ─────────────────────────────────────────────────────────
 import matchRouter           from './routes/match.js'
 // ─── Student Readiness (B10) ─────────────────────────────────────────────────
@@ -59,8 +60,9 @@ export function createApp() {
   // Training
   app.use('/api/training',   trainingRouter)
 
-  // AI Processing
+  // AI Processing & Chat
   app.use('/api/process',    processRouter)
+  app.use('/api/ai/chat',    aiChatRouter)
 
   // Matching & Gaps
   app.use('/api/match',      matchRouter)

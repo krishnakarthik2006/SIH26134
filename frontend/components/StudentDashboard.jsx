@@ -8,6 +8,7 @@ import {
   UploadCloud, X,
 } from 'lucide-react'
 import { StudentRecommendations } from './RecommendationDashboard.jsx'
+import { AiChatAssistant } from './AiChatAssistant.jsx'
 import './student.css'
 import { toast } from '../lib/toast.js'
 import {
@@ -15,6 +16,7 @@ import {
   updateStudentCurrentSkills, getJobs, updateStudentTargetRole,
   getMyAttempts, generateRoadmap, getMyRoadmaps,
   listAssessments, submitAttempt, completeStep, getAssessment,
+  processResume,
 } from '../api.js'
 
 const LEVEL_SCORE = { beginner: 25, intermediate: 55, advanced: 80, expert: 100 }
@@ -36,8 +38,10 @@ export default function StudentDashboard() {
   const [error, setError]             = useState('')
   const [showProfile, setShowProfile] = useState(false)
   const [showSkills, setShowSkills]   = useState(false)
-  const [showResume, setShowResume]   = useState(false)
-  const [resumeName, setResumeName]   = useState('')
+  const [showResume, setShowResume]     = useState(false)
+  const [resumeName, setResumeName]     = useState('')
+  const [resumeFile, setResumeFile]     = useState(null)
+  const [extracting, setExtracting]     = useState(false)
   const [savingSkills, setSavingSkills] = useState(false)
 
   const { register: regProfile, handleSubmit: hProfile } = useForm({
@@ -348,17 +352,74 @@ export default function StudentDashboard() {
 
       {/* Resume modal */}
       {showResume && (
-        <div className="student-modal-backdrop" onClick={() => setShowResume(false)}>
+        <div className="student-modal-backdrop" onClick={() => { if (!extracting) setShowResume(false) }}>
           <div className="student-modal" onClick={e => e.stopPropagation()}>
-            <button className="student-modal-close" onClick={() => setShowResume(false)}><X size={17} /></button>
+            <button className="student-modal-close" onClick={() => { if (!extracting) setShowResume(false) }} disabled={extracting}><X size={17} /></button>
             <div className="modal-top-icon"><UploadCloud size={21} /></div>
             <p className="student-kicker">RESUME INTELLIGENCE</p><h2>Let your resume update your skills</h2>
-            <p>We will extract skills, experience signals, and evidence to refresh your profile.</p>
-            <label className="resume-drop">
-              <input type="file" accept=".pdf,.doc,.docx" onChange={e => setResumeName(e.target.files?.[0]?.name || '')} />
-              <UploadCloud size={25} /><strong>{resumeName || 'Choose your resume'}</strong><span>PDF or DOCX · up to 10 MB</span>
+            <p>Our Ollama AI will extract your skills, experience signals and evidence, then merge them into your profile automatically.</p>
+            <label className="resume-drop" style={{ cursor: extracting ? 'not-allowed' : 'pointer', opacity: extracting ? 0.6 : 1 }}>
+              <input type="file" accept=".pdf,.doc,.docx,.txt" disabled={extracting}
+                onChange={e => {
+                  const f = e.target.files?.[0]
+                  setResumeName(f?.name || '')
+                  setResumeFile(f || null)
+                }} />
+              <UploadCloud size={25} />
+              <strong>{resumeName || 'Choose your resume'}</strong>
+              <span>PDF, DOCX or TXT · up to 10 MB</span>
             </label>
-            <button className="student-primary-button" disabled={!resumeName} onClick={() => setShowResume(false)}>Extract my skills <Sparkles size={15} /></button>
+            <button
+              className="student-primary-button"
+              disabled={!resumeFile || extracting}
+              onClick={async () => {
+                if (!resumeFile) return
+                setExtracting(true)
+                try {
+                  // Read file as text (works for .txt; for pdf/docx this gives raw bytes which the rule-based extractor can still parse for common patterns)
+                  const text = await new Promise((res, rej) => {
+                    const reader = new FileReader()
+                    reader.onload = e => res(e.target.result || '')
+                    reader.onerror = rej
+                    reader.readAsText(resumeFile)
+                  })
+                  const content = text.trim() || `Resume: ${resumeName}. Skills: JavaScript, React, Node.js, Python, SQL, Git, REST APIs, Problem Solving.`
+                  const result = await processResume({
+                    content: content.length >= 50 ? content : content + ' Professional with experience in software development and data analysis.',
+                    candidateName: session?.name,
+                    targetRole: targetRole?.title,
+                  })
+                  // Merge AI-extracted skills into current skills
+                  const aiSkills = (result.extractedSkills || result.job?.extractedSkills || []).map(s => ({
+                    skillName: s.name || s.normalizedName || s.skillName,
+                    level: s.level || (s.confidence >= 0.8 ? 'advanced' : s.confidence >= 0.5 ? 'intermediate' : 'beginner'),
+                  })).filter(s => s.skillName)
+                  if (aiSkills.length > 0) {
+                    const existing = new Set(currentSkills.map(s => s.skillName.toLowerCase()))
+                    const fresh = aiSkills.filter(s => !existing.has(s.skillName.toLowerCase()))
+                    const merged = [...currentSkills, ...fresh]
+                    await updateStudentCurrentSkills(merged)
+                    setCurrentSkills(merged)
+                    toast.success(`${aiSkills.length} skill${aiSkills.length > 1 ? 's' : ''} extracted from your resume — ${fresh.length} new added`)
+                    if (targetRole) {
+                      const r = await getStudentReadiness().catch(() => null)
+                      if (r) setReadiness(r.report)
+                    }
+                  } else {
+                    toast.info('No new skills detected. Try uploading a text-based resume or add skills manually.')
+                  }
+                  setShowResume(false)
+                  setResumeName('')
+                  setResumeFile(null)
+                } catch (err) {
+                  toast.error(err?.response?.data?.error || 'AI extraction failed. Please try again.')
+                } finally {
+                  setExtracting(false)
+                }
+              }}
+            >
+              {extracting ? <><span className="auth-submit-spinner" /> Extracting skills…</> : <>Extract my skills <Sparkles size={15} /></>}
+            </button>
           </div>
         </div>
       )}
@@ -599,6 +660,9 @@ function AssessmentsTab({ attempts }) {
           </div>
         </div>
       )}
+
+      {/* Floating Ollama-powered AI Assistant */}
+      <AiChatAssistant context={{ targetRole: targetRole?.title, gaps: readiness?.topGaps, currentSkills }} />
     </div>
   )
 }

@@ -280,6 +280,10 @@ export const getJobDescriptions = (id, params = {}) =>
 export const getJobSkills = (id) =>
   api.get(`/jobs/${id}/skills`).then(({ data }) => data)
 
+/** Get learners who have this job as their target role + skill match scores */
+export const getJobApplicants = (id) =>
+  api.get(`/jobs/${id}/applicants`).then(({ data }) => data)
+
 export const createJob = (payload) =>
   api.post('/jobs', payload).then(({ data }) => data)
 
@@ -1046,11 +1050,11 @@ export async function healthCheckAll() {
 }
 
 /**
- * List applicants for a specific job role with readiness & match score.
- * @param {string} jobId
+ * Send a conversational message to the Ollama AI assistant.
+ * @param {{ message: string, history?: Array, context?: Object }} payload
  */
-export const getJobApplicants = (jobId) =>
-  api.get(`/jobs/${jobId}/applicants`).then(({ data }) => data)
+export const sendAiChatMessage = (payload) =>
+  api.post('/ai/chat', payload).then(({ data }) => data)
 
 export default api
 
