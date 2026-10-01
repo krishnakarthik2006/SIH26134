@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { StudentRecommendations } from './RecommendationDashboard.jsx'
 import { AiChatAssistant } from './AiChatAssistant.jsx'
+import CareerExplorer from './CareerExplorer.jsx'
 import './student.css'
 import { toast } from '../lib/toast.js'
 import {
@@ -152,7 +153,7 @@ export default function StudentDashboard() {
         </div>
         <p className="student-nav-label">My journey</p>
         <nav className="student-nav">
-          {[[LayoutDashboard,'Dashboard'],[UserRound,'My profile'],[Target,'Skill gap'],[BookOpen,'Recommendations'],[GraduationCap,'Learning roadmap'],[Award,'Assessments']].map(([Icon, label]) => (
+          {[[LayoutDashboard,'Dashboard'],[BriefcaseBusiness,'Career library'],[UserRound,'My profile'],[Target,'Skill gap'],[BookOpen,'Recommendations'],[GraduationCap,'Learning roadmap'],[Award,'Assessments']].map(([Icon, label]) => (
             <button className={activeTab === label ? 'selected' : ''} onClick={() => setActiveTab(label)} key={label}>
               <Icon size={16} /><span>{label}</span>
               {label === 'Skill gap' && gaps.length > 0 && <em>{gaps.length}</em>}
@@ -179,7 +180,9 @@ export default function StudentDashboard() {
         <div className="student-content">
           {error && <p className="student-error" role="alert">{error} <button onClick={load}>Retry</button></p>}
 
-          {activeTab === 'Recommendations' ? (
+          {activeTab === 'Career library' ? (
+            <CareerExplorer />
+          ) : activeTab === 'Recommendations' ? (
             <StudentRecommendations onOpenRoadmap={() => setActiveTab('Learning roadmap')} />
           ) : activeTab === 'Learning roadmap' ? (
             <RoadmapTab roadmaps={roadmaps} onGenerate={generateMyRoadmap} hasGaps={gaps.length > 0} />

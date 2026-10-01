@@ -6,6 +6,7 @@ const { mongodbUri: uri, mongodbDbName: databaseName } = env
 export const domainCollections = [
   'users',
   'students',
+  'occupations',
   'skills',
   'skill_mappings',
   'industries',
@@ -38,6 +39,10 @@ const indexes = {
     [{ userId: 1 }, { unique: true, sparse: true }],
     [{ targetRole: 1 }],
     [{ targetJobRoleId: 1 }],
+  ],
+  occupations: [
+    [{ socCode: 1 }, { unique: true }],
+    [{ title: 'text', description: 'text', 'essentialSkills.name': 'text', 'softwareSkills.name': 'text' }, { name: 'occupations_search' }],
   ],
   skills: [
     // Unique lookup by normalizedName (dedup guard)

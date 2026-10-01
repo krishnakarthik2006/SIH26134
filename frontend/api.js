@@ -271,6 +271,12 @@ export const getJobs = (params = {}) =>
 export const searchJobs = (params = {}) =>
   api.get('/jobs/search', { params }).then(({ data }) => data)
 
+export const searchOccupations = (params = {}) =>
+  api.get('/occupations', { params }).then(({ data }) => data)
+
+export const getOccupation = (socCode) =>
+  api.get(`/occupations/${encodeURIComponent(socCode)}`).then(({ data }) => data)
+
 export const getJob = (id) =>
   api.get(`/jobs/${id}`).then(({ data }) => data)
 

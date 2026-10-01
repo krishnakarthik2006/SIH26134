@@ -68,24 +68,24 @@ function AuthScreen({ onLogin }) {
       <section className="auth-intro">
         <div className="brand auth-brand"><div className="brand-mark"><Sparkles size={17} strokeWidth={2.5} /></div><span>Skill<span>Sync</span></span></div>
         <div className="auth-hero-copy">
-          <p className="eyebrow">MAHARASHTRA SKILL INTELLIGENCE</p>
-          <h1>Turn market signals into <em>better futures.</em></h1>
-          <p>One connected workspace for employers, educators, learners, and the people shaping what comes next.</p>
+          <p className="eyebrow">WORKFORCE INTELLIGENCE</p>
+          <h1>Build skills that match real opportunity.</h1>
+          <p>One simple workspace for learners, employers, and training teams to act on demand, readiness, and growth.</p>
           <div className="auth-loop">
-            <span><i>01</i> Demand</span><ArrowRight size={15} />
-            <span><i>02</i> Skills</span><ArrowRight size={15} />
-            <span><i>03</i> Action</span>
+            <span><i>01</i> Discover</span><ArrowRight size={15} />
+            <span><i>02</i> Match</span><ArrowRight size={15} />
+            <span><i>03</i> Grow</span>
           </div>
         </div>
-        <small className="auth-footer">A shared intelligence layer for a changing workforce.</small>
+        <small className="auth-footer">Clearer decisions for a changing workforce.</small>
       </section>
 
       <section className="auth-panel">
         <div className="auth-panel-inner">
           <div className="auth-heading">
             <p className="eyebrow">{mode === 'login' ? 'WELCOME BACK' : 'CREATE ACCOUNT'}</p>
-            <h2>{mode === 'login' ? 'Enter your workspace' : 'Join the ecosystem'}</h2>
-            <p>{mode === 'login' ? 'Sign in to your SkillSync account.' : 'Choose your role to get started.'}</p>
+            <h2>{mode === 'login' ? 'Sign in' : 'Get started'}</h2>
+            <p>{mode === 'login' ? 'Use your account to continue.' : 'Choose a role and set up your workspace.'}</p>
           </div>
 
           {/* Role selector — only shown on register */}
