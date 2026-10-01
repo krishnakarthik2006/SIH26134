@@ -31,6 +31,7 @@ export default function TrainingDashboard() {
   const [showBuilder, setShowBuilder] = useState(false)
   const [showUpload, setShowUpload]   = useState(false)
   const [uploadName, setUploadName]   = useState('')
+  const [curriculumFile, setCurriculumFile] = useState(null)
   const [saving, setSaving]           = useState(false)
 
   const { register, handleSubmit, reset } = useForm()
@@ -62,7 +63,6 @@ export default function TrainingDashboard() {
         setDemandData(skills.map(s => ({
           name:     (s.skillName || '').slice(0, 10),
           demand:   Math.round(s.avgDemandScore || s.demandScore || 0),
-          coverage: Math.round((s.avgDemandScore || 60) * 0.7),
         })))
       }
 
@@ -133,13 +133,17 @@ export default function TrainingDashboard() {
 
   const [uploadProcessing, setUploadProcessing] = useState(false)
   const processCurricFile = async () => {
-    if (!uploadName) return
+    if (!curriculumFile) return
     setUploadProcessing(true)
     try {
-      const content = `Curriculum from file: ${uploadName}. Topics include advanced programming, data structures, algorithms, cloud infrastructure, machine learning fundamentals, and professional development skills.`
+      const content = await curriculumFile.text()
+      if (content.trim().length < 50) {
+        toast.error('The text file must contain at least 50 characters.')
+        return
+      }
       const progId = programs[0]?.id
       if (progId) {
-        const result = await processCurriculum({ content, programName: uploadName, trainingProgramId: progId })
+        const result = await processCurriculum({ content, programName: curriculumFile.name, trainingProgramId: progId })
         if (result.job?.extractedSkills?.length > 0) {
           toast.success(`${result.job.extractedSkills.length} skills extracted from curriculum`)
         } else {
@@ -148,7 +152,7 @@ export default function TrainingDashboard() {
       } else {
         toast.info('Create a training program first to link this curriculum')
       }
-      setShowUpload(false); setUploadName('')
+      setShowUpload(false); setUploadName(''); setCurriculumFile(null)
     } catch { toast.error('Processing failed. Check AI service.') }
     finally { setUploadProcessing(false) }
   }
@@ -223,7 +227,7 @@ export default function TrainingDashboard() {
           <section className="training-grid">
             <div className="training-panel demand-chart-panel">
               <PanelHeading icon={BarChart3} title="Industry requirement analysis" action="Open analysis" />
-              <p className="training-muted">Demand versus current coverage across the skills your learners need.</p>
+              <p className="training-muted">Recorded employer demand scores for skills in the market.</p>
               {loading && <div className="loading-rows"><span /><span /><span /></div>}
               {!loading && demandData.length === 0 && <p className="training-empty">No demand data yet.</p>}
               {demandData.length > 0 && (
@@ -235,7 +239,6 @@ export default function TrainingDashboard() {
                       <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#b4b7bf', fontSize: 9 }} />
                       <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e5e4e2', fontSize: 10 }} />
                       <Bar dataKey="demand"   name="Industry demand" fill="#f47b62" radius={[4,4,1,1]} barSize={14} />
-                      <Bar dataKey="coverage" name="Course coverage" fill="#7598e8" radius={[4,4,1,1]} barSize={14} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -325,8 +328,8 @@ export default function TrainingDashboard() {
             <div className="training-modal-icon"><UploadCloud size={21} /></div>
             <p className="training-kicker">AI CURRICULUM EXTRACTION</p><h2>Upload a curriculum</h2>
             <label className="training-upload">
-              <input type="file" accept=".pdf,.doc,.docx" onChange={e => setUploadName(e.target.files?.[0]?.name || '')} />
-              <UploadCloud size={24} /><strong>{uploadName || 'Choose a curriculum file'}</strong><span>PDF or DOCX · up to 10 MB</span>
+              <input type="file" accept=".txt,text/plain" onChange={e => { const file = e.target.files?.[0] || null; setCurriculumFile(file); setUploadName(file?.name || '') }} />
+              <UploadCloud size={24} /><strong>{uploadName || 'Choose a curriculum file'}</strong><span>Plain text file · at least 50 characters</span>
             </label>
             <button className="training-primary full-width" disabled={!uploadName || uploadProcessing} onClick={processCurricFile}>{uploadProcessing ? 'Extracting…' : 'Extract curriculum skills'} <Sparkles size={15} /></button>
           </div>

@@ -9,7 +9,7 @@ import {
 import './government.css'
 import { toast } from '../lib/toast.js'
 import {
-  getGovernmentOverview, getRegionalGaps, getSupplyDemand, getEmergingSkills,
+  getGovernmentOverview, getRegionalGaps, getEmergingSkills,
   getUnderservedAreas, generateReport2, getMyReports, createNotification,
 } from '../api.js'
 
@@ -21,7 +21,7 @@ export default function GovernmentDashboard() {
   const [region, setRegion]       = useState('All Maharashtra')
   const [overview, setOverview]   = useState(null)
   const [regions, setRegions]     = useState([])
-  const [trendData, setTrendData] = useState([])
+  const trendData = []
   const [emerging, setEmerging]   = useState([])
   const [reports, setReports]     = useState([])
   const [loading, setLoading]     = useState(true)
@@ -35,10 +35,9 @@ export default function GovernmentDashboard() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [ovRes, rgRes, sdRes, emRes, repRes] = await Promise.allSettled([
+      const [ovRes, rgRes, emRes, repRes] = await Promise.allSettled([
         getGovernmentOverview(),
         getRegionalGaps({ limit: 10 }),
-        getSupplyDemand({ limit: 8 }),
         getEmergingSkills({ limit: 6, threshold: 10 }),
         getMyReports({ limit: 4 }),
       ])
@@ -47,39 +46,28 @@ export default function GovernmentDashboard() {
 
       if (rgRes.status === 'fulfilled') {
         const gaps = rgRes.value.regionalGaps || []
-        // Group by region to get region-level stats
+        // Summarize only recorded gap signals; do not infer demand or supply.
         const regionMap = {}
         gaps.forEach(g => {
           const r = g.region || 'Unknown'
-          if (!regionMap[r]) regionMap[r] = { name: r, gap: 0, demand: 0, supply: 0, count: 0, signal: g.skillName || '' }
-          regionMap[r].gap += g.priority || 1
+          if (!regionMap[r]) regionMap[r] = { name: r, priorityPoints: 0, count: 0, signal: g.skillName || '' }
+          regionMap[r].priorityPoints += Number(g.priority) || 1
           regionMap[r].count++
         })
         const regionList = Object.values(regionMap).map(r => ({
-          name:   r.name,
-          gap:    Math.min(40, r.gap),
-          demand: 70 + Math.round(Math.random() * 20),
-          supply: 40 + Math.round(Math.random() * 25),
+          name: r.name,
+          gap: r.priorityPoints,
+          count: r.count,
           signal: r.signal,
-          tone:   r.gap >= 3 ? 'coral' : 'yellow',
-        }))
+          tone: r.priorityPoints >= 3 ? 'coral' : 'yellow',
+        })).sort((a, b) => b.gap - a.gap)
         setRegions(regionList.slice(0, 6))
-
-        // Build synthetic trend from supply-demand data
-        if (sdRes.status === 'fulfilled') {
-          const sd = sdRes.value.supplyDemand || []
-          const months = ['Apr','May','Jun','Jul','Aug','Sep']
-          setTrendData(months.map((month, i) => {
-            const base = 55 + i * 5
-            return { month, demand: base + Math.round(Math.random() * 6), supply: base - 10 + Math.round(Math.random() * 8) }
-          }))
-        }
       }
 
       if (emRes.status === 'fulfilled') {
         setEmerging((emRes.value.emergingSkills || []).slice(0, 5).map((s, i) => ({
           name:   s.skillName || s.name || '—',
-          growth: s.growthRate ? `+${Math.round(s.growthRate)}%` : '+' + (50 + i * 20) + '%',
+          growth: s.growthRate != null && Number.isFinite(Number(s.growthRate)) ? `${Number(s.growthRate) > 0 ? '+' : ''}${Math.round(Number(s.growthRate))}%` : 'No trend data',
           source: `${Math.round(s.latestScore || s.avgScore || 70)} demand score`,
           tone:   ['coral','blue','mint','yellow','violet'][i % 5],
         })))
@@ -195,7 +183,7 @@ export default function GovernmentDashboard() {
           <section className="government-grid">
             <div className="government-panel trend-panel">
               <PanelHeading icon={BarChart3} title="Industry demand dashboard" action="Explore demand" />
-              <p className="government-muted">Normalized demand signals compared with training supply over recent months.</p>
+              <p className="government-muted">Historical demand and training-supply trends from recorded ecosystem data.</p>
               {loading && <div className="loading-rows"><span /><span /><span /></div>}
               {!loading && trendData.length === 0 && <p className="government-empty">No trend data yet. Add demand signals to build the chart.</p>}
               {trendData.length > 0 && (
@@ -212,21 +200,21 @@ export default function GovernmentDashboard() {
                   </ResponsiveContainer>
                 </div>
               )}
-              <div className="government-legend"><span><i className="demand-line" /> Industry demand</span><span><i className="supply-line" /> Training supply</span></div>
+              {trendData.length > 0 && <div className="government-legend"><span><i className="demand-line" /> Industry demand</span><span><i className="supply-line" /> Training supply</span></div>}
             </div>
 
             <div className="government-panel region-panel">
               <PanelHeading icon={MapPinned} title="Regional skill gap analysis" action="View map" />
-              <p className="government-muted">Demand minus available training coverage by region.</p>
+              <p className="government-muted">Recorded regional gap signals, weighted by their submitted priority.</p>
               {loading && <div className="loading-rows"><span /><span /><span /></div>}
               {!loading && regions.length === 0 && <p className="government-empty">No regional data yet. Record regional gaps to populate this view.</p>}
               <div className="region-list">
                 {regions.map(r => (
                   <button className={region === r.name ? 'active' : ''} onClick={() => { setRegion(r.name); setActive('Regional skill gaps') }} key={r.name}>
                     <span className={`region-dot ${r.tone}`} />
-                    <span><strong>{r.name}</strong><small>{r.signal || 'Skill gap signal'}</small></span>
+                    <span><strong>{r.name}</strong><small>{r.count} recorded signal{r.count === 1 ? '' : 's'}</small></span>
                     <div className="region-gap-bar"><i style={{ width: `${r.gap * 2.4}%` }} /></div>
-                    <b>{r.gap} pt</b><ArrowRight size={13} />
+                    <b>{r.gap} priority</b><ArrowRight size={13} />
                   </button>
                 ))}
               </div>

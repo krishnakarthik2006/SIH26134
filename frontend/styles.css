@@ -127,3 +127,21 @@ button { cursor: pointer; }
 .roadmap-tab { display:flex; flex-direction:column; gap:16px; }
 .program-mini-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0eefc; font-size:13px; }
 .program-mini-row span { flex:1; }
+
+/* Shared responsive guardrails for role workspaces and overlays. */
+@media (max-width: 600px) {
+  html, body, #root { max-width: 100%; overflow-x: clip; }
+  .student-main, .training-main, .industry-main, .government-main,
+  .ai-main, .analytics-main, .reports-main, .main-content { min-width: 0; }
+  .student-topbar, .training-topbar, .industry-topbar, .government-topbar,
+  .ai-topbar, .analytics-topbar, .reports-topbar, .topbar { gap: 8px; }
+  .student-topbar > div:first-child, .training-topbar > div:first-child,
+  .industry-topbar > div:first-child, .government-topbar > div:first-child,
+  .ai-topbar > div:first-child, .analytics-topbar > div:first-child,
+  .reports-topbar > div:first-child, .crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .student-modal, .training-modal, .industry-modal, .government-modal,
+  .ai-modal, .reports-modal, .modal { max-height: calc(100dvh - 32px); overflow-y: auto; }
+  .student-modal-backdrop, .training-modal-backdrop, .industry-modal-backdrop,
+  .government-modal-backdrop, .ai-modal-backdrop, .reports-modal-backdrop,
+  .modal-backdrop { padding: 16px; }
+}

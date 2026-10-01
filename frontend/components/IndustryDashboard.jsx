@@ -12,7 +12,7 @@ import { toast } from '../lib/toast.js'
 import {
   getJobs, createJob, getIndustries, createIndustry, getDemandSkills,
   getSkillShortages, getMyReports, generateReport2, getIndustryProfile,
-  uploadJobDescription, getJobApplicants,
+  uploadJobDescription, getJobApplicants, processJobDescription,
 } from '../api.js'
 
 export default function IndustryDashboard() {
@@ -30,6 +30,7 @@ export default function IndustryDashboard() {
   const [showRole, setShowRole]     = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [fileName, setFileName]     = useState('')
+  const [jdFile, setJdFile]         = useState(null)
   const [saving, setSaving]         = useState(false)
   const [uploading, setUploading]   = useState(false)
 
@@ -62,7 +63,6 @@ export default function IndustryDashboard() {
         setDemandData((demandRes.value.skills || []).map(s => ({
           skill:  (s.skillName || s.name || '').slice(0, 12),
           demand: Math.round(s.avgDemandScore || s.demandScore || 0),
-          supply: Math.round((s.avgDemandScore || 50) * 0.65),
         })))
       }
 
@@ -70,7 +70,7 @@ export default function IndustryDashboard() {
         setShortages((shortageRes.value.shortages || []).map(s => ({
           name:  s.skillName,
           level: s.severity === 'critical' ? 'Critical' : s.severity === 'high' ? 'High' : 'Medium',
-          roles: s.demandScore ? Math.round(s.demandScore / 3) : 0,
+          trainingCount: Number(s.trainingCount) || 0,
           tone:  s.severity === 'critical' ? 'coral' : s.severity === 'high' ? 'yellow' : 'blue',
         })))
       }
@@ -120,18 +120,27 @@ export default function IndustryDashboard() {
   }
 
   const processJD = async () => {
-    if (!fileName) return
+    if (!jdFile) return
+    const jobId = roles[0]?.id
+    if (!jobId) {
+      toast.info('Create a job role first, then upload the JD to link it')
+      return
+    }
     setUploading(true)
     try {
-      const content = `Job description for ${fileName}. Requires skills relevant to ${industry?.companyName || 'our organization'}.`
-      const jobId = roles[0]?.id
-      if (jobId) {
-        await uploadJobDescription(jobId, { content, source: 'upload', rawTitle: fileName })
-        toast.success('Job description processed and skills extracted')
-      } else {
-        toast.info('Create a job role first, then upload the JD to link it')
+      const content = await jdFile.text()
+      if (content.trim().length < 50) {
+        toast.error('The text file must contain at least 50 characters.')
+        return
       }
-      setShowUpload(false); setFileName('')
+      await uploadJobDescription(jobId, { content, source: 'upload', rawTitle: jdFile.name })
+      const result = await processJobDescription({ content, sourceId: jobId, jobTitle: roles[0]?.title, industryId: industry?.id })
+      if (result.status === 'pending') {
+        toast.info('Job description saved. Skill extraction is queued until the AI service is available.')
+      } else {
+        toast.success('Job description processed and skills extracted')
+      }
+      setShowUpload(false); setFileName(''); setJdFile(null)
     } catch { toast.error('Processing failed.') }
     finally { setUploading(false) }
   }
@@ -212,7 +221,7 @@ export default function IndustryDashboard() {
           <section className="industry-grid">
             <div className="industry-panel demand-panel">
               <PanelHeading icon={BarChart3} title="Skill demand analysis" action="Open analysis" />
-              <p className="industry-muted">Required skills across your active roles compared with available talent signals.</p>
+              <p className="industry-muted">Demand scores from recorded employer skill signals.</p>
               {loading && <div className="loading-rows"><span /><span /><span /></div>}
               {!loading && demandData.length === 0 && <p className="industry-empty">No demand data yet. Add demand signals to populate this chart.</p>}
               {demandData.length > 0 && (
@@ -224,7 +233,6 @@ export default function IndustryDashboard() {
                       <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#b4b7bf', fontSize: 9 }} />
                       <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e5e4e2', fontSize: 10 }} />
                       <Bar dataKey="demand" name="Role demand"   fill="#f47b62" radius={[4,4,1,1]} barSize={14} />
-                      <Bar dataKey="supply" name="Talent supply" fill="#55b99e" radius={[4,4,1,1]} barSize={14} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -240,7 +248,7 @@ export default function IndustryDashboard() {
                 {shortages.map(skill => (
                   <div className="shortage-row" key={skill.name}>
                     <span className={`shortage-icon ${skill.tone}`}><AlertCircle size={14} /></span>
-                    <span><strong>{skill.name}</strong><small>{skill.roles > 0 ? `${skill.roles} roles require this skill` : 'High employer demand'}</small></span>
+                    <span><strong>{skill.name}</strong><small>{skill.trainingCount > 0 ? `${skill.trainingCount} training programs cover this skill` : 'No published training programs cover this skill'}</small></span>
                     <b className={skill.level === 'Critical' ? 'critical' : skill.level === 'High' ? 'high' : 'medium'}>{skill.level}</b>
                     <ArrowRight size={13} />
                   </div>
@@ -337,8 +345,8 @@ export default function IndustryDashboard() {
             <p className="industry-kicker">AI SKILL EXTRACTION</p><h2>Upload a job description</h2>
             <p>SkillSync will extract required skills, proficiency levels, and role signals automatically.</p>
             <label className="industry-upload">
-              <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={e => setFileName(e.target.files?.[0]?.name || '')} />
-              <UploadCloud size={24} /><strong>{fileName || 'Choose a job description'}</strong><span>PDF, DOCX or TXT · up to 10 MB</span>
+              <input type="file" accept=".txt,text/plain" onChange={e => { const file = e.target.files?.[0] || null; setJdFile(file); setFileName(file?.name || '') }} />
+              <UploadCloud size={24} /><strong>{fileName || 'Choose a job description'}</strong><span>Plain text file · at least 50 characters</span>
             </label>
             <button className="industry-primary full-width" disabled={!fileName || uploading} onClick={processJD}>{uploading ? 'Processing…' : 'Extract required skills'} <Sparkles size={15} /></button>
           </div>

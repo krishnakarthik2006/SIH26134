@@ -66,31 +66,18 @@ router.get('/overview', asyncHandler(async (_req, res) => {
           { $subtract: ['$_id.month', 1] },
         ]},
         demand: { $round: ['$demand', 0] },
-        supply: { $round: [{ $multiply: ['$demand', 0.72] }, 0] }, // supply proxy
       }},
     ]).toArray(),
   ])
-
-  // Build a fallback demand pulse using recent months if no skill_demand data
-  const demandPulse = demandPulseRaw.length >= 2 ? demandPulseRaw : buildFallbackPulse()
 
   res.json({
     activeDemandSignals,
     skillsTracked,
     learnersInPathways,
     ecosystemAlignment: alignmentDocs[0]?.avg ? Math.round(alignmentDocs[0].avg) : null,
-    demandPulse,
+    demandPulse: demandPulseRaw,
   })
 }))
-
-function buildFallbackPulse() {
-  const months = ['Mar','Apr','May','Jun','Jul','Aug','Sep']
-  return months.map((month, i) => ({
-    month,
-    demand: 55 + i * 5 + Math.round(Math.random() * 4),
-    supply: 33 + i * 4 + Math.round(Math.random() * 3),
-  }))
-}
 
 // ── Create demand signal ──────────────────────────────────────────────────────
 router.post('/signals', asyncHandler(async (req, res) => {

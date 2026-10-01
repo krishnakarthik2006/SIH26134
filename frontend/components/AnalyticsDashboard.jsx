@@ -31,15 +31,6 @@ const COLORS = {
   series: ['#6450dc','#f47b62','#55b99e','#eab856','#7598e8','#e879a0'],
 }
 
-const MAHARASHTRA_REGIONS = [
-  { name: 'Pune',       demand: 88, supply: 72 },
-  { name: 'Mumbai',     demand: 91, supply: 78 },
-  { name: 'Vidarbha',   demand: 74, supply: 42 },
-  { name: 'Marathwada', demand: 66, supply: 38 },
-  { name: 'Nashik',     demand: 72, supply: 55 },
-  { name: 'Nagpur',     demand: 76, supply: 53 },
-]
-
 const TABS = [
   { id: 'overview',  icon: LayoutDashboard, label: 'Overview'        },
   { id: 'demand',    icon: TrendingUp,      label: 'Demand trends'   },
@@ -67,33 +58,15 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 // ─── KPI CARD ─────────────────────────────────────────────────────────────────
-function KpiCard({ icon: Icon, label, value, sub, delta, tone, loading, spark }) {
-  const up = delta && !delta.startsWith('-')
+function KpiCard({ icon: Icon, label, value, sub, tone, loading }) {
   return (
     <div className={`ac-kpi ac-kpi-${tone || 'violet'}`}>
       <div className="ac-kpi-row">
         <span className={`ac-kpi-icon ac-kpi-icon-${tone}`}><Icon size={16} /></span>
-        {delta && <span className={`ac-kpi-delta ${up ? 'up' : 'down'}`}>{up ? <TrendingUp size={9} /> : <TrendingDown size={9} />}{delta}</span>}
       </div>
       <strong className="ac-kpi-val">{loading ? <i className="ac-skel" /> : (value ?? '—')}</strong>
       <small className="ac-kpi-lbl">{label}</small>
       {sub && <em className="ac-kpi-sub">{sub}</em>}
-      {spark?.length > 1 && (
-        <div className="ac-kpi-spark">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={spark} margin={{ top: 1, right: 0, bottom: 0, left: 0 }}>
-              <defs>
-                <linearGradient id={`sg-${tone}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={COLORS[tone] || COLORS.violet} stopOpacity="0.3" />
-                  <stop offset="95%" stopColor={COLORS[tone] || COLORS.violet} stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <Area type="monotone" dataKey="v" stroke={COLORS[tone] || COLORS.violet}
-                strokeWidth={1.5} fill={`url(#sg-${tone})`} dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
     </div>
   )
 }
@@ -116,9 +89,8 @@ function Panel({ title, icon: Icon, badge, action, children, className = '' }) {
 }
 
 // ─── SUPPLY-DEMAND BAR ROW ─────────────────────────────────────────────────────
-function SdRow({ skill, demand, supply, rank }) {
-  const gap = Math.max(0, demand - supply)
-  const sev = gap > 30 ? 'critical' : gap > 15 ? 'high' : 'ok'
+function SdRow({ skill, demand, programCount, rank }) {
+  const sev = programCount === 0 ? 'critical' : programCount <= 2 ? 'high' : 'ok'
   return (
     <div className="ac-sd-row">
       <span className="ac-sd-rank">{rank}</span>
@@ -127,37 +99,28 @@ function SdRow({ skill, demand, supply, rank }) {
         <div className="ac-sd-track">
           <div className="ac-sd-bar-d" style={{ width: `${demand}%` }} title={`Demand ${demand}%`} />
         </div>
-        <div className="ac-sd-track">
-          <div className="ac-sd-bar-s" style={{ width: `${supply}%` }} title={`Supply ${supply}%`} />
-        </div>
+        <span className="ac-sd-program-count">{programCount} programs</span>
       </div>
       <div className="ac-sd-nums">
         <span style={{ color: COLORS.coral }}>{demand}%</span>
-        <span style={{ color: COLORS.mint }}>{supply}%</span>
       </div>
-      <span className={`ac-sd-gap ac-sd-gap-${sev}`}>{gap > 0 ? `−${gap}` : '✓'}</span>
+      <span className={`ac-sd-gap ac-sd-gap-${sev}`}>{programCount === 0 ? 'None' : programCount <= 2 ? 'Low' : 'Available'}</span>
     </div>
   )
 }
 
 // ─── REGION CARD ──────────────────────────────────────────────────────────────
 function RegionCard({ r, active, onClick }) {
-  const fill = Math.round((r.supply / Math.max(r.demand, 1)) * 100)
-  const sev  = r.gap > 25 ? 'critical' : r.gap > 12 ? 'high' : 'ok'
+  const sev = r.priorityPoints >= 3 ? 'high' : 'ok'
   return (
     <button className={`ac-region-card ${active ? 'selected' : ''}`} onClick={onClick}>
       <div className="ac-region-head">
         <strong>{r.name}</strong>
-        <span className={`ac-region-badge ac-region-badge-${sev}`}>{sev === 'ok' ? '✓' : sev === 'high' ? 'High' : 'Critical'}</span>
+        <span className={`ac-region-badge ac-region-badge-${sev}`}>{sev === 'ok' ? 'Recorded' : 'Priority'}</span>
       </div>
       <div className="ac-region-metrics">
-        <div><small>Demand</small><b style={{ color: COLORS.coral }}>{r.demand}%</b></div>
-        <div><small>Supply</small><b style={{ color: COLORS.mint }}>{r.supply}%</b></div>
-        <div><small>Gap</small><b>{r.gap} pt</b></div>
-      </div>
-      <div className="ac-region-progress">
-        <div className="ac-region-bar"><div style={{ width: `${fill}%` }} /></div>
-        <span>{fill}% coverage</span>
+        <div><small>Recorded signals</small><b>{r.count}</b></div>
+        <div><small>Priority points</small><b>{r.priorityPoints}</b></div>
       </div>
     </button>
   )
@@ -196,62 +159,40 @@ export default function AnalyticsDashboard() {
 
       if (a.status === 'fulfilled') setOv(a.value?.overview || null)
 
-      // Build 6-point trend
+        // The API provides aggregate growth by skill, not monthly history.
       if (b.status === 'fulfilled') {
         const raw = b.value?.trends || []
-        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-        const base = new Date().getMonth()
-        if (raw.length >= 2) {
-          setTrend(raw.slice(0, 6).map((t, i) => ({
-            month:     months[(base - 5 + i + 12) % 12],
-            demand:    Math.round(t.latestScore || t.avgScore || 60),
-            skills:    Math.round((t.avgScore || 55) * 0.88),
-            alignment: Math.min(95, Math.round(48 + i * 4)),
-          })))
-        }
+        setTrend(raw.filter(t => t.growthRate != null && Number.isFinite(Number(t.growthRate))).slice(0, 12).map(t => ({
+          skill: t.skillName || 'Unknown skill',
+          growthRate: Number(t.growthRate),
+        })))
       }
 
       // Supply-demand
       if (c.status === 'fulfilled') {
-        setSd((c.value?.supplyDemand || []).slice(0, 7).map(s => ({
+        setSd((c.value?.supplyDemand || []).slice(0, 7).map((s, index) => ({
+          id: s.skillId || `${s.skillName || 'skill'}-${index}`,
           skill:  (s.skillName || '').slice(0, 14),
           demand: Math.round(s.demandScore || 0),
-          supply: s.trainingSupply
-            ? Math.min(95, Math.round(s.trainingSupply * 18))
-            : Math.round((s.demandScore || 0) * 0.6),
+          programCount: Number(s.trainingSupply) || 0,
         })).filter(s => s.demand > 0))
       }
 
-      // Regional — deterministic, no Math.random()
+      // Summarize only stored regional signals.
       if (d.status === 'fulfilled') {
         const gaps = d.value?.regionalGaps || []
         const gapMap = {}
         gaps.forEach(g => {
           if (!g.region) return
-          gapMap[g.region] = (gapMap[g.region] || 0) + (g.priority || 1)
+          if (!gapMap[g.region]) gapMap[g.region] = { count: 0, priorityPoints: 0 }
+          gapMap[g.region].count += 1
+          gapMap[g.region].priorityPoints += Number(g.priority) || 1
         })
-        const filled = MAHARASHTRA_REGIONS.map(base => {
-          const extraGap = gapMap[base.name] ? Math.min(15, gapMap[base.name]) : 0
-          return {
-            ...base,
-            gap: Math.max(1, base.demand - base.supply + extraGap),
-          }
-        })
-        setRg(filled)
+        setRg(Object.entries(gapMap).map(([name, values]) => ({ name, ...values }))
+          .sort((a, b) => b.priorityPoints - a.priorityPoints))
       }
 
-      // Heatmap — deterministic multipliers per region
-      if (e.status === 'fulfilled') {
-        const MULT = [1.0, 1.04, 0.64, 0.57, 0.76, 0.72]
-        const skills = (e.value?.skills || []).slice(0, 6)
-        setHeat(skills.map(s => ({
-          skill:  (s.skillName || '').slice(0, 16),
-          demand: Math.round(s.avgDemandScore || s.demandScore || 60),
-          values: MULT.slice(0, 4).map(m =>
-            Math.round(Math.min(99, (s.avgDemandScore || 60) * m))
-          ),
-        })))
-      }
+      setHeat([])
 
       if (f.status === 'fulfilled') setEm(f.value?.emergingSkills || [])
       if (g.status === 'fulfilled') setUnder(g.value?.underservedAreas || [])
@@ -266,39 +207,32 @@ export default function AnalyticsDashboard() {
   const filteredRg  = region === 'All regions' ? rg : rg.filter(r => r.name === region)
 
   const alignPct = useMemo(() => {
-    if (selRegion) return Math.round((selRegion.supply / Math.max(selRegion.demand, 1)) * 100)
-    if (rg.length) return Math.round(rg.reduce((s, r) => s + r.supply / Math.max(r.demand, 1), 0) / rg.length * 100)
+    if (selRegion) return null
     return ov?.avgLearnerReadiness || null
-  }, [selRegion, rg, ov])
-
-  // Spark line helper (monotone from a base value)
-  const spark = (base) => {
-    if (!base) return []
-    return [0.70, 0.76, 0.82, 0.87, 0.92, 1.0].map((f, i) => ({ v: Math.round(base * f), i }))
-  }
+  }, [selRegion, ov])
 
   // ── OVERVIEW TAB ──────────────────────────────────────────────────────────
   const OverviewTab = () => (
     <>
       <div className="ac-kpi-grid">
-        <KpiCard icon={BriefcaseBusiness} label="Active job roles"    value={ov?.totalActiveJobRoles} sub={`${ov?.totalIndustries || 0} industries`}                 delta="+12%"  tone="coral"  loading={loading} spark={spark(ov?.totalActiveJobRoles)} />
-        <KpiCard icon={Users}             label="Learners registered" value={ov?.totalLearners}        sub="Across all programs"                                      delta="+8.4%" tone="violet" loading={loading} spark={spark(ov?.totalLearners)} />
-        <KpiCard icon={Gauge}             label="Training programs"   value={ov?.totalActivePrograms}  sub={`${ov?.totalProviders || 0} providers`}                   delta="+5%"   tone="mint"   loading={loading} spark={spark(ov?.totalActivePrograms)} />
-        <KpiCard icon={Target}            label="Open skill gaps"     value={ov?.openSkillGaps}        sub={ov?.avgLearnerReadiness ? `${ov.avgLearnerReadiness}% avg readiness` : 'Across all learners'} delta={null}  tone="yellow" loading={loading} spark={spark(ov?.openSkillGaps)} />
+        <KpiCard icon={BriefcaseBusiness} label="Active job roles"    value={ov?.totalActiveJobRoles} sub={`${ov?.totalIndustries || 0} industries`} tone="coral" loading={loading} />
+        <KpiCard icon={Users}             label="Learners registered" value={ov?.totalLearners}        sub="Across all programs"                  tone="violet" loading={loading} />
+        <KpiCard icon={Gauge}             label="Training programs"   value={ov?.totalActivePrograms}  sub={`${ov?.totalProviders || 0} providers`} tone="mint" loading={loading} />
+        <KpiCard icon={Target}            label="Open skill gaps"     value={ov?.openSkillGaps}        sub={ov?.avgLearnerReadiness ? `${ov.avgLearnerReadiness}% avg readiness` : 'Across all learners'} tone="yellow" loading={loading} />
       </div>
 
       <div className="ac-two-col" style={{ marginTop: 20 }}>
-        <Panel title="Demand vs supply (top skills)" icon={BarChart3} action="Full analysis" badge={sd.length || null}>
+        <Panel title="Demand scores and curriculum coverage" icon={BarChart3} action="Full analysis" badge={sd.length || null}>
           {loading && <div className="loading-rows"><span /><span /><span /></div>}
           {!loading && sd.length === 0 && <p className="ac-empty">No demand data yet. Record demand signals to populate.</p>}
           {sd.length > 0 && (
             <div className="ac-sd-legend">
               <span><i style={{ background: COLORS.coral }} />Demand</span>
-              <span><i style={{ background: COLORS.mint }} />Supply</span>
+              <span>Active curricula counts are shown per skill.</span>
             </div>
           )}
           <div className="ac-sd-list">
-            {sd.map((s, i) => <SdRow key={s.skill} {...s} rank={i + 1} />)}
+            {sd.map((s, i) => <SdRow key={s.id} {...s} rank={i + 1} />)}
           </div>
         </Panel>
 
@@ -308,14 +242,15 @@ export default function AnalyticsDashboard() {
             {!loading && rg.length > 0 && (
               <div className="ac-region-mini-list">
                 {rg.slice(0, 4).map(r => {
-                  const fill = Math.round((r.supply / Math.max(r.demand, 1)) * 100)
+                  const maxSignals = Math.max(...rg.map(item => item.count), 1)
+                  const fill = Math.round((r.count / maxSignals) * 100)
                   return (
                     <div key={r.name} className="ac-region-mini-row">
                       <span>{r.name}</span>
                       <div className="ac-region-mini-bar">
                         <div style={{ width: `${fill}%`, background: fill >= 70 ? COLORS.mint : fill >= 50 ? COLORS.yellow : COLORS.coral }} />
                       </div>
-                      <b>{fill}%</b>
+                      <b>{r.count}</b>
                     </div>
                   )
                 })}
@@ -341,41 +276,32 @@ export default function AnalyticsDashboard() {
   const DemandTab = () => (
     <>
       <div className="ac-two-col">
-        <Panel title="Demand trend over time" icon={TrendingUp} action="Export" className="ac-panel-tall">
+        <Panel title="Recorded growth by skill" icon={TrendingUp} className="ac-panel-tall">
           {loading && <div className="loading-rows" style={{ height: 220 }}><span /><span /></div>}
           {!loading && trend.length === 0 && (
             <div className="ac-empty-panel">
               <TrendingUp size={32} strokeWidth={1.2} />
-              <p>No trend data yet. Record demand signals over time to see growth patterns.</p>
+              <p>No recorded growth values yet. Growth appears after demand is recorded over time.</p>
             </div>
           )}
           {trend.length > 0 && (
             <div className="ac-chart-wrap">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trend} margin={{ top: 12, right: 12, bottom: 0, left: -20 }}>
-                  <defs>
-                    <linearGradient id="demandGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.coral} stopOpacity="0.15" />
-                      <stop offset="95%" stopColor={COLORS.coral} stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
+                <BarChart data={trend} margin={{ top: 12, right: 12, bottom: 0, left: -20 }}>
                   <CartesianGrid vertical={false} stroke="#f0eef8" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#9298a7', fontSize: 10 }} />
-                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#b4b7bf', fontSize: 10 }} />
+                  <XAxis dataKey="skill" axisLine={false} tickLine={false} tick={{ fill: '#9298a7', fontSize: 9 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#b4b7bf', fontSize: 10 }} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
-                  <Line type="monotone" dataKey="demand"    name="Demand index"    stroke={COLORS.coral}  strokeWidth={2.5} dot={{ r: 3, fill: COLORS.coral }}  activeDot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="skills"    name="Skills coverage" stroke={COLORS.yellow} strokeWidth={2.5} dot={{ r: 3, fill: COLORS.yellow }} activeDot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="alignment" name="Alignment score" stroke={COLORS.mint}   strokeWidth={2.5} dot={{ r: 3, fill: COLORS.mint }}   activeDot={{ r: 5 }} strokeDasharray="5 3" />
-                </LineChart>
+                  <Bar dataKey="growthRate" name="Recorded growth (%)" fill={COLORS.coral} radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </Panel>
 
-        <Panel title="Supply vs demand by skill" icon={BarChart3} className="ac-panel-tall">
+        <Panel title="Demand score by skill" icon={BarChart3} className="ac-panel-tall">
           {loading && <div className="loading-rows" style={{ height: 220 }}><span /><span /></div>}
-          {!loading && sd.length === 0 && <p className="ac-empty">No supply-demand data yet.</p>}
+          {!loading && sd.length === 0 && <p className="ac-empty">No demand-score data yet.</p>}
           {sd.length > 0 && (
             <div className="ac-chart-wrap">
               <ResponsiveContainer width="100%" height="100%">
@@ -386,48 +312,12 @@ export default function AnalyticsDashboard() {
                   <Tooltip content={<ChartTooltip />} />
                   <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
                   <Bar dataKey="demand" name="Demand" fill={COLORS.coral} radius={[4, 4, 0, 0]} barSize={12} />
-                  <Bar dataKey="supply" name="Supply" fill={COLORS.mint}  radius={[4, 4, 0, 0]} barSize={12} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </Panel>
       </div>
-
-      {/* Area sparklines per top skill */}
-      {!loading && sd.length > 0 && (
-        <Panel title="Per-skill demand profile" icon={Sparkles} style={{ marginTop: 16 }}>
-          <div className="ac-skill-sparks">
-            {sd.slice(0, 6).map((s, i) => (
-              <div key={s.skill} className="ac-skill-spark-card">
-                <div className="ac-skill-spark-top">
-                  <strong>{s.skill}</strong>
-                  <span style={{ color: s.demand > s.supply ? COLORS.coral : COLORS.mint }}>
-                    {s.demand > s.supply ? `−${s.demand - s.supply}pt` : '✓ balanced'}
-                  </span>
-                </div>
-                <div className="ac-skill-spark-chart">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={spark(s.demand)} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
-                      <defs>
-                        <linearGradient id={`sk-${i}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="10%" stopColor={COLORS.series[i]} stopOpacity="0.35" />
-                          <stop offset="95%" stopColor={COLORS.series[i]} stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <Area type="monotone" dataKey="v" stroke={COLORS.series[i]}
-                        strokeWidth={1.8} fill={`url(#sk-${i})`} dot={false} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="ac-skill-spark-foot">
-                  <span>Demand {s.demand}%</span><span>Supply {s.supply}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
-      )}
     </>
   )
 
@@ -463,11 +353,10 @@ export default function AnalyticsDashboard() {
                 >
                   <CartesianGrid vertical={false} stroke="#f0eef8" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9298a7', fontSize: 9 }} />
-                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#b4b7bf', fontSize: 10 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#b4b7bf', fontSize: 10 }} />
                   <Tooltip content={<ChartTooltip />} />
                   <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, paddingTop: 6 }} />
-                  <Bar dataKey="demand" name="Demand" fill={COLORS.coral} radius={[4, 4, 0, 0]} barSize={14} />
-                  <Bar dataKey="supply" name="Supply" fill={COLORS.mint}  radius={[4, 4, 0, 0]} barSize={14} />
+                  <Bar dataKey="count" name="Recorded gap signals" fill={COLORS.coral} radius={[4, 4, 0, 0]} barSize={14} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -489,10 +378,10 @@ export default function AnalyticsDashboard() {
   const HeatmapTab = () => {
     const regionHeaders = rg.slice(0, 4).map(r => r.name)
     return (
-      <Panel title="Skill gap intensity by region" icon={Target} action="Export heatmap">
-        <p className="ac-panel-sub">Darker = higher demand gap. Click a cell to filter the regional view.</p>
+      <Panel title="Skill gap intensity by region" icon={Target}>
+      <p className="ac-panel-sub">Region-specific skill intensity is not available in recorded data yet.</p>
         {loading && <div className="loading-rows"><span /><span /><span /></div>}
-        {!loading && heat.length === 0 && <p className="ac-empty">No skill data yet. Add skills with demand scores.</p>}
+        {!loading && heat.length === 0 && <p className="ac-empty">Region-specific skill intensity is not available in the recorded data yet.</p>}
         {heat.length > 0 && (
           <div className="ac-heatmap">
             <div className="ac-hm-header">
@@ -532,20 +421,18 @@ export default function AnalyticsDashboard() {
 
   // ── ALIGNMENT TAB ────────────────────────────────────────────────────────
   const AlignmentTab = () => {
-    const donutData = [
-      { name: 'Aligned', value: alignPct || 0 },
-      { name: 'Gap',     value: 100 - (alignPct || 0) },
+    const donutData = alignPct === null ? [] : [
+      { name: 'Readiness', value: alignPct },
+      { name: 'Remaining', value: 100 - alignPct },
     ]
-    const sdForAlign = sd.slice(0, 5).map(s => ({
-      ...s, coverage: Math.round((s.supply / Math.max(s.demand, 1)) * 100),
-    }))
+    const sdForAlign = sd.slice(0, 5)
     return (
       <div className="ac-two-col ac-alignment-layout">
-        <Panel title="Overall ecosystem alignment" icon={Gauge} className="ac-alignment-donut-panel">
+        <Panel title="Average learner readiness" icon={Gauge} className="ac-alignment-donut-panel">
           {loading && <div className="loading-rows" style={{ height: 200 }}><span /></div>}
           {!loading && (
             <>
-              <div className="ac-donut-wrap">
+              {alignPct !== null ? <div className="ac-donut-wrap">
                 <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
                     <Pie data={donutData} cx="50%" cy="50%" innerRadius={65} outerRadius={90}
@@ -556,22 +443,19 @@ export default function AnalyticsDashboard() {
                     <Tooltip formatter={(v, n) => [`${v}%`, n]} />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="ac-donut-label">
-                  <strong>{alignPct !== null ? `${alignPct}%` : '—'}</strong>
-                  <span>Aligned</span>
-                </div>
-              </div>
+                <div className="ac-donut-label"><strong>{alignPct}%</strong><span>Avg readiness</span></div>
+              </div> : <div className="ac-empty-panel"><Gauge size={30} /><p>Regional readiness has not been recorded.</p></div>}
               <div className="ac-alignment-summary">
-                <div className={`ac-align-status ${alignPct >= 70 ? 'good' : alignPct >= 50 ? 'warn' : 'crit'}`}>
-                  {alignPct >= 70 ? '✓ Strong alignment' : alignPct >= 50 ? '⚠ Moderate alignment' : '⚑ Needs improvement'}
-                </div>
-                <p>{selRegion ? `${selRegion.name}: ${selRegion.supply}% training supply vs ${selRegion.demand}% employer demand.` : 'Average across all Maharashtra regions. Select a region in the Regional tab for a drill-down.'}</p>
+                {alignPct !== null && <div className={`ac-align-status ${alignPct >= 70 ? 'good' : alignPct >= 50 ? 'warn' : 'crit'}`}>
+                  {alignPct >= 70 ? '✓ Strong readiness' : alignPct >= 50 ? '⚠ Moderate readiness' : '⚑ Readiness needs improvement'}
+                </div>}
+                <p>{selRegion ? `${selRegion.name}: ${selRegion.count} recorded gap signals, weighted at ${selRegion.priorityPoints} priority points.` : 'This value is average learner readiness, not a regional supply-demand alignment score.'}</p>
               </div>
             </>
           )}
         </Panel>
 
-        <Panel title="Skill-level alignment breakdown" icon={BarChart3} className="ac-panel-tall">
+        <Panel title="Demand scores by skill" icon={BarChart3} className="ac-panel-tall">
           {loading && <div className="loading-rows" style={{ height: 220 }}><span /><span /></div>}
           {!loading && sdForAlign.length > 0 && (
             <div className="ac-chart-wrap">
@@ -581,9 +465,7 @@ export default function AnalyticsDashboard() {
                   <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#b4b7bf', fontSize: 10 }} />
                   <YAxis type="category" dataKey="skill" axisLine={false} tickLine={false} tick={{ fill: '#4e5670', fontSize: 10 }} width={72} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="demand"   name="Demand"   fill={COLORS.coral} radius={[0, 4, 4, 0]} barSize={9} />
-                  <Bar dataKey="supply"   name="Supply"   fill={COLORS.mint}  radius={[0, 4, 4, 0]} barSize={9} />
-                  <Bar dataKey="coverage" name="Coverage%" fill={COLORS.blue} radius={[0, 4, 4, 0]} barSize={9} />
+                  <Bar dataKey="demand" name="Demand score" fill={COLORS.coral} radius={[0, 4, 4, 0]} barSize={9} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -596,10 +478,10 @@ export default function AnalyticsDashboard() {
 
   // ── EMERGING SKILLS TAB ───────────────────────────────────────────────────
   const EmergingTab = () => {
-    const emForChart = em.slice(0, 6).map(s => ({
+    const emForChart = em.filter(s => s.avgDemandScore != null || s.latestScore != null).slice(0, 6).map(s => ({
       name:   (s.skillName || s.name || '').slice(0, 12),
-      score:  Math.round(s.avgDemandScore || s.latestScore || 60),
-      growth: s.growthRate ? Math.round(s.growthRate) : null,
+      score:  Math.round(s.avgDemandScore ?? s.latestScore),
+      growth: s.growthRate == null ? null : Math.round(s.growthRate),
     }))
     return (
       <>
@@ -638,8 +520,8 @@ export default function AnalyticsDashboard() {
                 {!loading && em.length === 0 && <p className="ac-empty">No emerging skills data.</p>}
                 {em.slice(0, 6).map((s, i) => {
                   const color = COLORS.series[i % COLORS.series.length]
-                  const score = Math.round(s.avgDemandScore || s.latestScore || 60)
-                  const growth = s.growthRate ? `+${Math.round(s.growthRate)}%` : 'Rising'
+                  const score = Math.round(s.avgDemandScore ?? s.latestScore ?? 0)
+                  const growth = s.growthRate != null && Number.isFinite(Number(s.growthRate)) ? `${Number(s.growthRate) > 0 ? '+' : ''}${Math.round(Number(s.growthRate))}%` : 'No trend data'
                   return (
                     <div className="ac-emerging-row" key={i}>
                       <div className="ac-emerging-rank" style={{ background: color + '22', color }}>

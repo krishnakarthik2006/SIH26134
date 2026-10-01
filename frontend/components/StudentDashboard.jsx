@@ -28,7 +28,7 @@ export default function StudentDashboard() {
   const firstName = session?.name?.split(' ')[0] || 'Learner'
   const initials  = (session?.name || 'L').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
 
-  const [activeTab, setActiveTab]     = useState('Dashboard')
+  const [activeTab, setActiveTab]     = useState(() => new URLSearchParams(window.location.search).get('tab') || 'Dashboard')
   const [readiness, setReadiness]     = useState(null)
   const [currentSkills, setCurrentSkills] = useState([])
   const [targetRole, setTargetRole]   = useState(null)
@@ -115,16 +115,6 @@ export default function StudentDashboard() {
     } catch { toast.error('Could not save skill.') }
     finally { setSavingSkills(false) }
   }
-
-  // Build a 6-point progress curve from readiness history (synthetic if unavailable)
-  const progressData = readiness
-    ? [{ week: 'W1', score: Math.max(0, (readiness.jobReadinessScore || 50) - 20) },
-       { week: 'W2', score: Math.max(0, (readiness.jobReadinessScore || 50) - 15) },
-       { week: 'W3', score: Math.max(0, (readiness.jobReadinessScore || 50) - 10) },
-       { week: 'W4', score: Math.max(0, (readiness.jobReadinessScore || 50) - 6) },
-       { week: 'W5', score: Math.max(0, (readiness.jobReadinessScore || 50) - 2) },
-       { week: 'W6', score: readiness.jobReadinessScore || 50 }]
-    : []
 
   const readinessScore = readiness?.jobReadinessScore ?? null
   const gaps = readiness?.missingSkills || []
@@ -243,18 +233,7 @@ export default function StudentDashboard() {
                       <p>Your score combines assessed skill levels, target-role demand, and learning momentum.</p>
                     </div>
                   </div>
-                  {progressData.length > 0 && (
-                    <div className="mini-chart">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={progressData}>
-                          <defs><linearGradient id="studentScore" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7160e0" stopOpacity=".25" /><stop offset="100%" stopColor="#7160e0" stopOpacity="0" /></linearGradient></defs>
-                          <XAxis dataKey="week" hide /><YAxis hide domain={[0, 100]} />
-                          <Tooltip contentStyle={{ borderRadius: 8, fontSize: 10 }} />
-                          <Area type="monotone" dataKey="score" stroke="#7160e0" strokeWidth={2} fill="url(#studentScore)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
+                  <p className="student-muted">Readiness history will appear after multiple dated assessments are recorded.</p>
                 </div>
 
                 <div className="student-panel gaps-student-panel">

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getOverview, getDemandSkills, getMyNotifications } from './api.js'
 import DemandChart from './components/DemandChart.jsx'
 import SignalForm from './components/SignalForm.jsx'
@@ -24,9 +25,9 @@ const SEVERITY_COLOR = { high: 'coral', critical: 'coral', warning: 'yellow', su
 const SKILL_TONES    = ['coral', 'mint', 'yellow', 'blue', 'violet']
 
 function App() {
+  const navigate = useNavigate()
   const [active, setActive]           = useState('Overview')
   const [showUpload, setShowUpload]   = useState(false)
-  const [period, setPeriod]           = useState('Last 30 days')
   const [overview, setOverview]       = useState(null)
   const [skillGaps, setSkillGaps]     = useState([])
   const [activity, setActivity]       = useState([])
@@ -35,6 +36,25 @@ function App() {
   // Pull user info from session for personalised greeting
   const session = (() => { try { return JSON.parse(localStorage.getItem('skillsync-session') || 'null') } catch { return null } })()
   const firstName = session?.name?.split(' ')[0] || 'there'
+
+  const openWorkspace = (label) => {
+    const destinations = {
+      'Industry demand': '/industry',
+      'Curriculum alignment': '/training',
+      'Learner pathways': '/student',
+      Assessments: '/student?tab=Assessments',
+      'Regional signals': '/government',
+    }
+    if (label === 'Skill intelligence') {
+      setActive(label)
+      return
+    }
+    if (label === 'Overview') {
+      navigate('/')
+      return
+    }
+    navigate(destinations[label] || '/')
+  }
 
   const loadData = useCallback(() => {
     setLoading(true)
@@ -46,12 +66,15 @@ function App() {
       setOverview(ov)
 
       // Build skill-gap rows from live demand data
-      const gaps = (demand.skills || []).map((s, i) => ({
-        name:   s.skillName || s.name || 'Unknown',
-        demand: Math.round(s.avgDemandScore || s.demandScore || 70),
-        supply: Math.max(10, Math.round((s.avgDemandScore || 70) * 0.65 - i * 2)),
-        tone:   SKILL_TONES[i % SKILL_TONES.length],
-      }))
+      const gaps = (demand.skills || []).map((s, i) => {
+        const score = s.avgDemandScore ?? s.demandScore
+        if (score == null || !Number.isFinite(Number(score))) return null
+        return {
+          name: s.skillName || s.name || 'Unknown',
+          demand: Math.round(Number(score)),
+          tone: SKILL_TONES[i % SKILL_TONES.length],
+        }
+      }).filter(Boolean)
       setSkillGaps(gaps.length ? gaps : [])
 
       // Map notifications to activity feed
@@ -87,7 +110,7 @@ function App() {
         <nav>{navigation.map(item => {
           const Icon = item.icon
           return (
-            <button className={`nav-item ${active === item.label ? 'active' : ''}`} key={item.label} onClick={() => setActive(item.label)}>
+            <button className={`nav-item ${active === item.label ? 'active' : ''}`} key={item.label} onClick={() => openWorkspace(item.label)}>
               <Icon size={17} /><span>{item.label}</span>
             </button>
           )
@@ -122,7 +145,6 @@ function App() {
                 <p className="intro">Here is how the skill ecosystem is moving today.</p>
               </div>
               <div className="header-actions">
-                <button className="secondary-button"><FileUp size={16} /> Import job descriptions</button>
                 <button className="primary-button" onClick={() => setShowUpload(true)}><Plus size={17} /> Add signal</button>
               </div>
             </section>
@@ -137,46 +159,40 @@ function App() {
             </section>
 
             <section className="metric-grid">
-              <Metric icon={BriefcaseBusiness} label="Active demand signals"  value={loading ? '…' : (overview?.activeDemandSignals?.toLocaleString() ?? '—')}  trend="+18.4%" caption="vs. previous month" tone="coral"  />
-              <Metric icon={Target}            label="Skills being tracked"   value={loading ? '…' : (overview?.skillsTracked?.toLocaleString()        ?? '—')}  trend="+32"    caption="new this month"   tone="mint"   />
-              <Metric icon={Users}             label="Learners in pathways"   value={loading ? '…' : (overview?.learnersInPathways?.toLocaleString()   ?? '—')}  trend="+9.2%"  caption="active roadmaps"  tone="blue"   />
-              <Metric icon={Gauge}             label="Ecosystem alignment"    value={loading ? '…' : (overview?.ecosystemAlignment ? `${overview.ecosystemAlignment}%` : '—')} trend="+6.1%" caption="since last review" tone="yellow" />
+              <Metric icon={BriefcaseBusiness} label="Active demand signals" value={loading ? '…' : (overview?.activeDemandSignals?.toLocaleString() ?? '—')} caption="Currently active" tone="coral" />
+              <Metric icon={Target} label="Skills being tracked" value={loading ? '…' : (overview?.skillsTracked?.toLocaleString() ?? '—')} caption="In the skill catalogue" tone="mint" />
+              <Metric icon={Users} label="Learners in pathways" value={loading ? '…' : (overview?.learnersInPathways?.toLocaleString() ?? '—')} caption="Active roadmaps" tone="blue" />
+              <Metric icon={Gauge} label="Ecosystem alignment" value={loading ? '…' : (overview?.ecosystemAlignment != null ? `${overview.ecosystemAlignment}%` : '—')} caption="From recorded program alignments" tone="yellow" />
             </section>
 
             <div className="section-heading">
               <div><p className="eyebrow">CONNECTED VIEW</p><h2>From demand to action</h2></div>
-              <div className="period-select">
-                <span>Showing</span>
-                <select value={period} onChange={e => setPeriod(e.target.value)}>
-                  <option>Last 30 days</option><option>Last 90 days</option><option>This year</option>
-                </select>
-                <ChevronDown size={14} />
-              </div>
             </div>
 
             <section className="dashboard-grid">
               <div className="panel demand-panel">
-                <PanelTitle icon={BarChart3} title="Demand & supply pulse" action="Explore signals" />
-                <div className="chart-legend"><span><i className="dot coral-dot" />Industry demand</span><span><i className="dot mint-dot" />Learner supply</span></div>
-                <div className="chart-wrap recharts-wrap"><DemandChart data={overview?.demandPulse} /></div>
+                <PanelTitle icon={BarChart3} title="Recorded demand over time" />
+                <div className="chart-legend"><span><i className="dot coral-dot" />Industry demand score</span></div>
+                {overview?.demandPulse?.length
+                  ? <div className="chart-wrap recharts-wrap"><DemandChart data={overview.demandPulse} /></div>
+                  : <p className="panel-empty">No monthly demand history has been recorded yet.</p>}
                 <div className="chart-foot"><span><strong>Live data</strong> from the demand intelligence layer</span><a href="#skill-gaps">See skill gaps <ArrowUpRight size={14} /></a></div>
               </div>
 
               <div className="panel gaps-panel" id="skill-gaps">
-                <PanelTitle icon={Sparkles} title="Priority skill gaps" action="View all" />
-                <p className="panel-subtitle">Where employer demand is outpacing learner readiness.</p>
+                <PanelTitle icon={Sparkles} title="Current demand scores" />
+                <p className="panel-subtitle">Skills ranked by recorded employer demand.</p>
                 {loading && <div className="loading-rows"><span /><span /><span /></div>}
                 {!loading && skillGaps.length === 0 && <p className="panel-empty">No skill gap data yet. Add demand signals to see this panel.</p>}
                 <div className="skill-list">
                   {skillGaps.map(skill => (
                     <div className="skill-row" key={skill.name}>
-                      <div className="skill-name"><i className={`skill-dot ${skill.tone}`} /><strong>{skill.name}</strong><span>{Math.max(0, skill.demand - skill.supply)} pt gap</span></div>
+                      <div className="skill-name"><i className={`skill-dot ${skill.tone}`} /><strong>{skill.name}</strong><span>Demand {skill.demand}%</span></div>
                       <div className="progress-track"><div className={`progress-fill ${skill.tone}`} style={{ width: `${skill.demand}%` }} /></div>
-                      <div className="skill-values"><span>{skill.supply}%</span><b>{skill.demand}%</b></div>
                     </div>
                   ))}
                 </div>
-                <button className="text-button">Open gap planner <ArrowUpRight size={14} /></button>
+                <button className="text-button" onClick={() => setActive('Skill intelligence')}>Open skill intelligence <ArrowUpRight size={14} /></button>
               </div>
             </section>
 
@@ -247,8 +263,8 @@ function greeting() {
   return 'evening'
 }
 
-function Metric({ icon: Icon, label, value, trend, caption, tone }) {
-  return <div className="metric-card"><div className={`metric-icon ${tone}`}><Icon size={18} /></div><span className="metric-label">{label}</span><strong className="metric-value">{value}</strong><div className="metric-foot"><b>{trend}</b><span>{caption}</span></div></div>
+function Metric({ icon: Icon, label, value, caption, tone }) {
+  return <div className="metric-card"><div className={`metric-icon ${tone}`}><Icon size={18} /></div><span className="metric-label">{label}</span><strong className="metric-value">{value}</strong><div className="metric-foot"><span>{caption}</span></div></div>
 }
 function PanelTitle({ icon: Icon, title, action }) {
   return <div className="panel-title"><div><Icon size={17} /><h3>{title}</h3></div><button className="panel-action">{action}<ArrowUpRight size={13} /></button></div>
