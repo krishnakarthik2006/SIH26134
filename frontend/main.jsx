@@ -12,6 +12,7 @@ const IndustryDashboard = lazy(() => import('./components/IndustryDashboard.jsx'
 const GovernmentDashboard = lazy(() => import('./components/GovernmentDashboard.jsx'))
 const AIIntelligence = lazy(() => import('./components/AIIntelligence.jsx'))
 const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard.jsx'))
+const CareerAnalyticsDashboard = lazy(() => import('./components/CareerAnalyticsDashboard.jsx'))
 const ReportsCenter = lazy(() => import('./components/ReportsCenter.jsx'))
 const SkillMatchingDashboard = lazy(() => import('./components/SkillMatchingDashboard.jsx'))
 const RecommendationDashboard = lazy(() => import('./components/RecommendationDashboard.jsx'))
@@ -67,6 +68,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/government" element={<AuthGate><GovernmentDashboard /></AuthGate>} />
             <Route path="/intelligence" element={<AuthGate><AIIntelligence /></AuthGate>} />
             <Route path="/analytics" element={<AuthGate><AnalyticsDashboard /></AuthGate>} />
+            <Route path="/career-analytics" element={<AuthGate><CareerAnalyticsDashboard /></AuthGate>} />
             <Route path="/reports" element={<AuthGate><ReportsCenter /></AuthGate>} />
             <Route path="/skill-matching" element={<AuthGate><SkillMatchingDashboard /></AuthGate>} />
             <Route path="/recommendations" element={<AuthGate><RecommendationDashboard /></AuthGate>} />

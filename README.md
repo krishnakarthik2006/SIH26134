@@ -100,6 +100,28 @@ flowchart TD
 
 ---
 
+## 📊 Career Analytics Project Workflow
+
+Open **Career analytics** from the workspace navigation or visit `/career-analytics` after signing in. This page presents the data-preparation steps, exploratory charts, two trained classifiers, a majority-class baseline, held-out and cross-validation metrics, and interactive education-band predictions.
+
+The analytics pipeline reads the five career CSV files from `../career_projects` relative to the repository by default. If they are in a different directory, set `CAREER_DATA_DIR` in the environment used to start the Python service. The raw occupation table contains 1,016 records; rows without a usable education label are excluded from supervised learning and shown in the UI.
+
+The supervised target is the dominant broad education band for each occupation, selected by summing the reported required-level percentages within these bands: secondary/certificate, undergraduate, graduate/professional, and advanced professional. Features include essential-skill importance and level, common software/tool indicators, and occupation-level aggregates. Vocabulary selection is based on training occupations only. Evaluation uses one stratified 80/20 holdout with a fixed seed, five-fold macro-F1 cross-validation on the training split, and a majority-class baseline. After evaluation, the serving models are refit on the complete labeled cohort.
+
+Install the Python ML dependency with the rest of the AI service requirements:
+
+```bash
+cd ai_service
+pip install -r requirements.txt
+cd ..
+```
+
+`npm run dev` starts the frontend, backend, and Python service. The first analytics request prepares and caches the dataset and model results in the Python process; subsequent requests reuse that result. Run `npm run test:analytics` to exercise preprocessing, model comparison, and prediction against the supplied dataset.
+
+**Interpretation:** these are occupation-level reference estimates, not predictions of an individual learner's credential requirements. The evaluation is a project benchmark and should not be treated as a substitute for external validation.
+
+---
+
 ## 🔑 Pre-Seeded Demo Accounts
 
 To immediately test the end-to-end workflow without manual data entry, run the seed script:

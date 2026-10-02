@@ -27,6 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from ollama_client import is_ollama_available, ollama_generate, parse_json_from_response
+from career_analytics import predict_education_band, public_career_analytics
 
 # ─── SETUP ───────────────────────────────────────────────────────────────────
 
@@ -421,3 +422,46 @@ async def list_models():
             return {"models": r.json().get("models", []), "current": OLLAMA_MODEL}
     except Exception:
         return {"models": [], "current": OLLAMA_MODEL, "error": "Ollama not reachable"}
+
+
+@app.get("/analytics/careers/overview", dependencies=[Depends(verify_api_key)])
+def career_analytics_overview():
+    try:
+        return public_career_analytics()
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/analytics/careers/eda", dependencies=[Depends(verify_api_key)])
+def career_analytics_eda():
+    """
+    Return only the EDA and wrangling sub-payloads, keeping the response
+    lightweight for the dedicated EDA panels in the frontend.
+    """
+    try:
+        result = public_career_analytics()
+        return {
+            "wrangling":          result["wrangling"],
+            "eda":                result["eda"],
+            "confusionMatrices":  result["confusionMatrices"],
+            "featureImportances": result["featureImportances"],
+            "educationDistribution": result["educationDistribution"],
+            "topSkills":          result["topSkills"],
+            "topSoftware":        result["topSoftware"],
+        }
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+class CareerPredictionRequest(BaseModel):
+    socCode: str = Field(..., pattern=r"^\d{2}-\d{4}\.\d{2}$")
+
+
+@app.post("/analytics/careers/predict", dependencies=[Depends(verify_api_key)])
+def career_education_prediction(req: CareerPredictionRequest):
+    try:
+        return predict_education_band(req.socCode)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Occupation is not part of the labeled model cohort") from exc
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc

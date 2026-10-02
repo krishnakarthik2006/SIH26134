@@ -6,7 +6,7 @@ import SignalForm from './components/SignalForm.jsx'
 import SkillMatchingDashboard from './components/SkillMatchingDashboard.jsx'
 import {
   Activity, ArrowUpRight, BarChart3, Bell, BookOpen, BriefcaseBusiness,
-  ChevronDown, CircleHelp, FileUp, Gauge, GraduationCap, LayoutDashboard,
+  ChartNoAxesCombined, ChevronDown, CircleHelp, FileUp, Gauge, GraduationCap, LayoutDashboard,
   MapPinned, Plus, Search, Settings2, Sparkles, Target, Users, X,
 } from 'lucide-react'
 
@@ -14,6 +14,7 @@ const navigation = [
   { label: 'Overview',             icon: LayoutDashboard },
   { label: 'Industry demand',      icon: BriefcaseBusiness },
   { label: 'Skill intelligence',   icon: Sparkles },
+  { label: 'Career analytics',     icon: ChartNoAxesCombined },
   { label: 'Curriculum alignment', icon: BookOpen },
   { label: 'Learner pathways',     icon: GraduationCap },
   { label: 'Assessments',          icon: Target },
@@ -44,6 +45,7 @@ function App() {
       'Learner pathways': '/student',
       Assessments: '/student?tab=Assessments',
       'Regional signals': '/government',
+      'Career analytics': '/career-analytics',
     }
     if (label === 'Skill intelligence') {
       setActive(label)

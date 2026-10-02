@@ -11,6 +11,7 @@ import normalizeRouter       from './routes/normalize.js'
 import industryRouter        from './routes/industry.js'
 import jobsRouter            from './routes/jobs.js'
 import occupationsRouter     from './routes/occupations.js'
+import careerAnalyticsRouter from './routes/careerAnalytics.js'
 // ─── Training ────────────────────────────────────────────────────────────────
 import trainingRouter        from './routes/training.js'
 // ─── AI Processing & Chat ───────────────────────────────────────────────────
@@ -58,6 +59,7 @@ export function createApp() {
   app.use('/api/industries', industryRouter)
   app.use('/api/jobs',       jobsRouter)
   app.use('/api/occupations', occupationsRouter)
+  app.use('/api/analytics', careerAnalyticsRouter)
 
   // Training
   app.use('/api/training',   trainingRouter)

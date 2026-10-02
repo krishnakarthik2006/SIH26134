@@ -277,6 +277,15 @@ export const searchOccupations = (params = {}) =>
 export const getOccupation = (socCode) =>
   api.get(`/occupations/${encodeURIComponent(socCode)}`).then(({ data }) => data)
 
+export const getCareerAnalytics = () =>
+  api.get('/analytics/careers/overview').then(({ data }) => data)
+
+export const getCareerEda = () =>
+  api.get('/analytics/careers/eda').then(({ data }) => data)
+
+export const predictCareerEducation = (socCode) =>
+  api.post('/analytics/careers/predict', { socCode }).then(({ data }) => data)
+
 export const getJob = (id) =>
   api.get(`/jobs/${id}`).then(({ data }) => data)
 
