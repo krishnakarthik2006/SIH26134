@@ -4,7 +4,7 @@ const api = axios.create({ baseURL: '/api' })
 
 // Attach the JWT from localStorage on every request if present
 api.interceptors.request.use((config) => {
-  const session = JSON.parse(localStorage.getItem('skillsync-session') || 'null')
+  const session = JSON.parse(localStorage.getItem('careeriq-session') || 'null')
   if (session?.token) {
     config.headers.Authorization = `Bearer ${session.token}`
   }

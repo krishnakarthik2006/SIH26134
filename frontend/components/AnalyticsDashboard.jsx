@@ -128,7 +128,7 @@ function RegionCard({ r, active, onClick }) {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function AnalyticsDashboard() {
-  const session  = (() => { try { return JSON.parse(localStorage.getItem('skillsync-session') || 'null') } catch { return null } })()
+  const session  = (() => { try { return JSON.parse(localStorage.getItem('careeriq-session') || 'null') } catch { return null } })()
   const initials = (session?.name || 'AN').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
 
   const [tab,     setTab]   = useState('overview')
@@ -587,7 +587,7 @@ export default function AnalyticsDashboard() {
         <div className="analytics-side-bottom">
           <button><Settings2 size={15} /> Settings</button>
           <button><CircleHelp size={15} /> Guide</button>
-          <button onClick={() => { localStorage.removeItem('skillsync-session'); window.location.href = '/login' }}>
+          <button onClick={() => { localStorage.removeItem('careeriq-session'); window.location.href = '/login' }}>
             <LogOut size={15} /> Sign out
           </button>
         </div>
@@ -655,7 +655,7 @@ export default function AnalyticsDashboard() {
 
           <footer className="analytics-footer">
             <span><ShieldCheck size={12} /> All metrics from live API — no simulated data</span>
-            <span>SkillSync Analytics · Maharashtra</span>
+            <span>Career Analytics · Maharashtra</span>
           </footer>
         </div>
       </main>

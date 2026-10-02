@@ -89,7 +89,7 @@ router.post('/', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Message is required' })
   }
 
-  const systemPrompt = `You are SkillSync's Ollama-powered AI career advisor. Your role is to help learners close their skill gaps and reach their target job roles.
+  const systemPrompt = `You are an AI career advisor powered by Ollama. Your role is to help learners close their skill gaps and reach their target job roles.
 
 Context about this learner:
 - Target role: ${context.targetRole || 'not set'}

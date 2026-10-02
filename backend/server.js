@@ -10,7 +10,7 @@ async function startServer() {
     await connectToDatabase()
     console.log(`MongoDB connected to ${env.mongodbDbName}`)
     server = app.listen(env.port, () => {
-      console.log(`SkillSync API listening on http://localhost:${env.port}`)
+      console.log(`CareerIQ API listening on http://localhost:${env.port}`)
     })
   } catch (error) {
     console.error('MongoDB connection failed:', error.message)

@@ -120,7 +120,7 @@ export default function AIIntelligence() {
         <>
           <section className="ai-welcome">
             <div>
-              <p className="ai-kicker">SKILLSYNC INTELLIGENCE LAYER · {ollamaUp ? 'OLLAMA LIVE' : 'RULE-BASED'}</p>
+              <p className="ai-kicker">AI INTELLIGENCE LAYER · {ollamaUp ? 'OLLAMA LIVE' : 'RULE-BASED'}</p>
               <h1>From messy language to clear action.</h1>
               <p>AI turns a resume, curriculum, or job description into shared skills, gap analysis, and personalised learning paths.</p>
             </div>
@@ -445,7 +445,7 @@ export default function AIIntelligence() {
         <div className="ai-side-bottom">
           <button><Settings2 size={15} /> Settings</button>
           <button><CircleHelp size={15} /> Documentation</button>
-          <button onClick={() => { localStorage.removeItem('skillsync-session'); window.location.href='/login' }}><LogOut size={15} /> Sign out</button>
+          <button onClick={() => { localStorage.removeItem('careeriq-session'); window.location.href='/login' }}><LogOut size={15} /> Sign out</button>
         </div>
       </aside>
 
@@ -494,7 +494,7 @@ export default function AIIntelligence() {
             <button className="ai-close" onClick={() => setExplain(null)}><X size={17} /></button>
             <div className="why-icon"><Lightbulb size={21} /></div>
             <p className="ai-kicker">EXPLAINABILITY</p><h2>Why this recommendation?</h2>
-            <p>SkillSync recommended <strong>{explain.skill}</strong> because its demand score is <strong>{explain.score}/100</strong> and it is currently <strong>{explain.match?.toLowerCase()}</strong>.</p>
+            <p>Recommended <strong>{explain.skill}</strong> because its demand score is <strong>{explain.score}/100</strong> and it is currently <strong>{explain.match?.toLowerCase()}</strong>.</p>
             <div className="reason-list">
               <div><Check size={14} /><span><strong>Market evidence</strong><small>Consistently appears in high-demand roles.</small></span></div>
               <div><Check size={14} /><span><strong>Ecosystem signal</strong><small>Tracked across industries in the Maharashtra dataset.</small></span></div>

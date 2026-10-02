@@ -61,7 +61,7 @@ async function getOrCreateAccount(name, email, password, role) {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
-console.log('\n🌱  Seeding SkillSync demo data...\n')
+console.log('\n🌱  Seeding CareerIQ demo data...\n')
 
 // ① Industry account
 console.log('① Industry account — abc@company.com')

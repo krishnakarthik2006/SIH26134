@@ -329,7 +329,7 @@ export default function CareerAnalyticsDashboard() {
         <button type="button" className="ca-back" onClick={() => navigate('/')} aria-label="Back">
           <ArrowLeft size={17} />
         </button>
-        <div><strong>SkillSync</strong><span>Career analytics</span></div>
+        <div><strong>Career Analytics</strong><span>Occupation dataset · ML models</span></div>
         <button type="button" className="ca-refresh" onClick={reload} disabled={loading} aria-label="Refresh">
           <RefreshCw size={16} className={loading ? 'ca-spin-icon' : ''} />
         </button>

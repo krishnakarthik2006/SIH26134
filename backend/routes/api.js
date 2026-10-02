@@ -19,7 +19,7 @@ const router = Router()
 router.get('/health', (_req, res) => {
   res.json({
     status:      'ok',
-    service:     'skillsync-api',
+    service:     'careeriq-api',
     mongodb:     isDatabaseConnected() ? 'connected' : 'disconnected',
     database:    getDatabaseName(),
     collections: domainCollections,

@@ -36,7 +36,7 @@ API_KEY         = os.getenv("AI_SERVICE_API_KEY", "")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
 
 app = FastAPI(
-    title="SkillSync AI — Ollama Edition",
+    title="CareerIQ AI — Ollama Edition",
     description="LLM-powered skill extraction using llama3.2:3b via Ollama.",
     version=SERVICE_VERSION,
 )
@@ -371,7 +371,7 @@ async def health():
     ollama_up = await is_ollama_available()
     return {
         "status":       "ok",
-        "service":      "skillsync-ai",
+        "service":      "careeriq-ai",
         "version":      SERVICE_VERSION,
         "ollamaModel":  OLLAMA_MODEL,
         "ollamaStatus": "available" if ollama_up else "unavailable (using rule-based fallback)",

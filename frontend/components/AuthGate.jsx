@@ -17,12 +17,12 @@ export function AuthGate({ children }) {
   const location = useLocation()
   const navigate  = useNavigate()
   const [session, setSession] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('skillsync-session') || 'null') }
+    try { return JSON.parse(localStorage.getItem('careeriq-session') || 'null') }
     catch { return null }
   })
 
   const handleLogin = (user) => {
-    localStorage.setItem('skillsync-session', JSON.stringify(user))
+    localStorage.setItem('careeriq-session', JSON.stringify(user))
     setSession(user)
     navigate(routeForRole(user.role), { replace: true })
   }
@@ -66,7 +66,7 @@ function AuthScreen({ onLogin }) {
   return (
     <main className="auth-page">
       <section className="auth-intro">
-        <div className="brand auth-brand"><div className="brand-mark"><Sparkles size={17} strokeWidth={2.5} /></div><span>Skill<span>Sync</span></span></div>
+        <div className="brand auth-brand"><div className="brand-mark"><Sparkles size={17} strokeWidth={2.5} /></div><span>Career<span>IQ</span></span></div>
         <div className="auth-hero-copy">
           <p className="eyebrow">WORKFORCE INTELLIGENCE</p>
           <h1>Build skills that match real opportunity.</h1>
@@ -141,7 +141,7 @@ function AuthScreen({ onLogin }) {
             <button className="primary-button auth-submit" type="submit" disabled={isSubmitting}>
               {isSubmitting
                 ? <><span className="auth-submit-spinner" /> Please wait…</>
-                : <>{mode === 'login' ? 'Sign in to SkillSync' : 'Create account'} <ArrowRight size={16} /></>}
+                : <>{mode === 'login' ? 'Sign in' : 'Create account'} <ArrowRight size={16} /></>}
             </button>
           </form>
 

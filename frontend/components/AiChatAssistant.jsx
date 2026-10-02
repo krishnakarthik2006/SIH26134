@@ -143,8 +143,7 @@ export function AiChatAssistant({ context = {} }) {
               </div>
               <div>
                 <h4 style={{ margin: 0, color: '#f8fafc', fontSize: '1rem', fontWeight: 600 }}>
-                  SkillSync AI Advisor
-                </h4>
+                  AI Career Advisor                </h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                   <span
                     style={{

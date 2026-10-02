@@ -16,7 +16,7 @@ import {
 } from '../api.js'
 
 export default function IndustryDashboard() {
-  const session   = (() => { try { return JSON.parse(localStorage.getItem('skillsync-session')||'null') } catch { return null } })()
+  const session   = (() => { try { return JSON.parse(localStorage.getItem('careeriq-session')||'null') } catch { return null } })()
   const initials  = (session?.name||'I').split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase()
 
   const [active, setActive]         = useState('Dashboard')
@@ -177,7 +177,7 @@ export default function IndustryDashboard() {
         <div className="industry-side-bottom">
           <button><Settings2 size={16} /> Settings</button>
           <button><CircleHelp size={16} /> Help centre</button>
-          <button onClick={() => { localStorage.removeItem('skillsync-session'); window.location.href='/login' }}><LogOut size={16} /> Sign out</button>
+          <button onClick={() => { localStorage.removeItem('careeriq-session'); window.location.href='/login' }}><LogOut size={16} /> Sign out</button>
         </div>
       </aside>
 
@@ -343,7 +343,7 @@ export default function IndustryDashboard() {
             <button className="industry-close" onClick={() => setShowUpload(false)}><X size={17} /></button>
             <div className="industry-modal-icon"><UploadCloud size={21} /></div>
             <p className="industry-kicker">AI SKILL EXTRACTION</p><h2>Upload a job description</h2>
-            <p>SkillSync will extract required skills, proficiency levels, and role signals automatically.</p>
+            <p>AI will extract required skills, proficiency levels, and role signals automatically.</p>
             <label className="industry-upload">
               <input type="file" accept=".txt,text/plain" onChange={e => { const file = e.target.files?.[0] || null; setJdFile(file); setFileName(file?.name || '') }} />
               <UploadCloud size={24} /><strong>{fileName || 'Choose a job description'}</strong><span>Plain text file · at least 50 characters</span>

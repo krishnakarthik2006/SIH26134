@@ -24,7 +24,7 @@ const LEVEL_SCORE = { beginner: 25, intermediate: 55, advanced: 80, expert: 100 
 const SKILL_COLORS = ['coral', 'mint', 'blue', 'yellow', 'violet']
 
 export default function StudentDashboard() {
-  const session = (() => { try { return JSON.parse(localStorage.getItem('skillsync-session') || 'null') } catch { return null } })()
+  const session = (() => { try { return JSON.parse(localStorage.getItem('careeriq-session') || 'null') } catch { return null } })()
   const firstName = session?.name?.split(' ')[0] || 'Learner'
   const initials  = (session?.name || 'L').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
 
@@ -94,7 +94,7 @@ export default function StudentDashboard() {
 
   const saveProfile = (values) => {
     const updated = { ...session, ...values }
-    localStorage.setItem('skillsync-session', JSON.stringify(updated))
+    localStorage.setItem('careeriq-session', JSON.stringify(updated))
     setShowProfile(false)
     toast.success('Profile saved')
   }
@@ -153,7 +153,7 @@ export default function StudentDashboard() {
         <div className="student-side-bottom">
           <button className="student-side-link"><Settings2 size={16} /> Settings</button>
           <button className="student-side-link"><CircleHelp size={16} /> Help centre</button>
-          <button className="student-logout" onClick={() => { localStorage.removeItem('skillsync-session'); window.location.href = '/login' }}><LogOut size={16} /> Sign out</button>
+          <button className="student-logout" onClick={() => { localStorage.removeItem('careeriq-session'); window.location.href = '/login' }}><LogOut size={16} /> Sign out</button>
         </div>
       </aside>
 

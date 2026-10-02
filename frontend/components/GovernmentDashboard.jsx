@@ -14,7 +14,7 @@ import {
 } from '../api.js'
 
 export default function GovernmentDashboard() {
-  const session  = (() => { try { return JSON.parse(localStorage.getItem('skillsync-session')||'null') } catch { return null } })()
+  const session  = (() => { try { return JSON.parse(localStorage.getItem('careeriq-session')||'null') } catch { return null } })()
   const initials = (session?.name||'G').split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase()
 
   const [active, setActive]       = useState('Dashboard')
@@ -120,7 +120,7 @@ export default function GovernmentDashboard() {
         <div className="government-side-bottom">
           <button><Settings2 size={16} /> Settings</button>
           <button><CircleHelp size={16} /> Help centre</button>
-          <button onClick={() => { localStorage.removeItem('skillsync-session'); window.location.href='/login' }}><LogOut size={16} /> Sign out</button>
+          <button onClick={() => { localStorage.removeItem('careeriq-session'); window.location.href='/login' }}><LogOut size={16} /> Sign out</button>
         </div>
       </aside>
 

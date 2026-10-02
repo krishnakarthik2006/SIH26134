@@ -13,7 +13,7 @@ if __name__ == "__main__":
     model   = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
     ollama  = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
-    print(f"SkillSync AI Service v2.0 — Ollama Edition")
+    print(f"CareerIQ AI Service v2.0 — Ollama Edition")
     print(f"  Model  : {model}")
     print(f"  Ollama : {ollama}")
     print(f"  Port   : {port}")
